@@ -13,6 +13,7 @@ import java.util.Random;
 import me.Josh123likeme.LORBase.EntityHolder.Player;
 import me.Josh123likeme.LORBase.InputListener.KeyboardWitness;
 import me.Josh123likeme.LORBase.InputListener.MouseWitness;
+import me.Josh123likeme.LORBase.Types.Direction;
 import me.Josh123likeme.LORBase.Types.Vector2D;
 
 public class Game extends Canvas implements Runnable {
@@ -29,7 +30,7 @@ public class Game extends Canvas implements Runnable {
 	private KeyboardWitness keyboardWitness;
 	private FrameData frameData;
 	
-	private World world;
+	public World world;
 	
 	private static Random random = new Random();
 	
@@ -43,9 +44,9 @@ public class Game extends Canvas implements Runnable {
 		
 		window = new Window(INITIAL_WIDTH, INITIAL_HEIGHT, "The Labyrinth Of Recursion", this);
 		frameData = new FrameData();
-		camPos = new Vector2D(10, 10);
+		camPos = new Vector2D(50, 50);
 		guiScale = 0.5d;
-		player = new Player(new Vector2D(0, 0));
+		player = new Player(new Vector2D(1, 1), Direction.NORTH);
 		world = new World(player);
 		
 		initInputs();
@@ -122,7 +123,8 @@ public class Game extends Canvas implements Runnable {
 			
 			frameData.DeltaFrame = ((double) (System.nanoTime() - lastFrame)) / 1000000000;
 			
-			frameData.CameraPosition = player.getPosition();
+			frameData.CameraPosition.X = player.getPosition().X;
+			frameData.CameraPosition.Y = player.getPosition().Y;
 			
 			updateFrameData();
 			
@@ -187,7 +189,9 @@ public class Game extends Canvas implements Runnable {
 		
 		debugInfo.add("Keys pressed: " + keysPressed);
 		
-		debugInfo.add("Player Pos: (" + player.getPosition().X + ", " + player.getPosition().Y + ")");
+		debugInfo.add("Player Pos: (" + player.getPosition().X + ", " + player.getPosition().Y + ") Facing: " + player.getFacing());
+		
+		debugInfo.add("Camera Pos: (" + frameData.CameraPosition.X + ", " + frameData.CameraPosition.Y + ")");
 		
 		g.setFont(new Font("", 0, getHeight() / 25));
 		
@@ -237,6 +241,11 @@ public class Game extends Canvas implements Runnable {
 		movementVector.Y = movementVector.Y * player.getMovementSpeed() * frameData.DeltaFrame;
 		
 		player.moveEntity(new Vector2D(player.getPosition().X + movementVector.X, player.getPosition().Y + movementVector.Y));
+
+		if (movementVector.X == 0 && movementVector.Y < 0) player.setFacing(Direction.NORTH);
+		if (movementVector.X == 0 && movementVector.Y > 0) player.setFacing(Direction.SOUTH);
+		if (movementVector.X < 0 && movementVector.Y == 0) player.setFacing(Direction.EAST);
+		if (movementVector.X > 0 && movementVector.Y == 0) player.setFacing(Direction.WEST);
 		
 	}
 	

@@ -22,4 +22,12 @@ public abstract class ResourceLoader {
 		
 	}
 	
+	public static BufferedImage copyImage(BufferedImage source){
+	    BufferedImage bi = new BufferedImage(source.getWidth(), source.getHeight(), source.getType());
+	    byte[] sourceData = ((DataBufferByte)source.getRaster().getDataBuffer()).getData();
+	    byte[] biData = ((DataBufferByte)bi.getRaster().getDataBuffer()).getData();
+	    System.arraycopy(sourceData, 0, biData, 0, sourceData.length);
+	    return bi;
+	}
+	
 }

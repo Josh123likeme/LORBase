@@ -3,15 +3,19 @@ package me.Josh123likeme.LORBase;
 import me.Josh123likeme.LORBase.BlockHolder.*;
 import me.Josh123likeme.LORBase.EntityHolder.EntityBase;
 import me.Josh123likeme.LORBase.EntityHolder.Player;
+import me.Josh123likeme.LORBase.Types.Direction;
 import me.Josh123likeme.LORBase.Types.Vector2D;
 
 import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.geom.AffineTransform;
+import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 
 public class World {
 	
-	Floor[][] floor = new Floor[101][101];
-	Wall[][] walls = new Wall[101][101];
+	public Floor[][] floor = new Floor[101][101];
+	public Wall[][] wall = new Wall[101][101];
 	
 	ArrayList<EntityBase> entities = new ArrayList<EntityBase>();
 	
@@ -27,7 +31,7 @@ public class World {
 			
 			for (int x = 0; x < floor[0].length; x++) {
 				
-				if (maze[y][x]) walls[y][x] = Wall.LABYRINTH_WALL;
+				if (maze[y][x]) wall[y][x] = Wall.LABYRINTH_WALL;
 				
 				else floor[y][x] = Floor.LABYRINTH_FLOOR;
 
@@ -48,8 +52,8 @@ public class World {
 			for (int x = 0; x < floor[0].length; x++) {
 				
 				g.drawImage(ResourceLoader.floorTextures.get(floor[y][x]),
-						(int) (frameData.Width / 2 - cameraPos.X - x * 16 * frameData.GuiScale),
-						(int) (frameData.Height / 2 - cameraPos.Y - y * 16 * frameData.GuiScale), 
+						(int) (x * 16 * frameData.GuiScale - frameData.CameraPosition.X * 16 * frameData.GuiScale) + frameData.Width / 2,
+						(int) (y * 16 * frameData.GuiScale - frameData.CameraPosition.Y * 16 * frameData.GuiScale) + frameData.Height / 2, 
 						(int) (16 * frameData.GuiScale + 1),
 						(int) (16 * frameData.GuiScale + 1),
 						null);
@@ -58,13 +62,13 @@ public class World {
 			
 		}
 		
-		for (int y = 0; y < floor.length; y++) {
+		for (int y = 0; y < wall.length; y++) {
 			
-			for (int x = 0; x < floor[0].length; x++) {
+			for (int x = 0; x < wall[0].length; x++) {
 				
-				g.drawImage(ResourceLoader.wallTextures.get(walls[y][x]),
-						(int) (frameData.Width / 2 - cameraPos.X - x * 16 * frameData.GuiScale),
-						(int) (frameData.Height / 2 - cameraPos.Y - y * 16 * frameData.GuiScale), 
+				g.drawImage(ResourceLoader.wallTextures.get(wall[y][x]),
+						(int) (x * 16 * frameData.GuiScale - frameData.CameraPosition.X * 16 * frameData.GuiScale) + frameData.Width / 2,
+						(int) (y * 16 * frameData.GuiScale - frameData.CameraPosition.Y * 16 * frameData.GuiScale) + frameData.Height / 2, 
 						(int) (16 * frameData.GuiScale + 1),
 						(int) (16 * frameData.GuiScale + 1),
 						null);
@@ -72,12 +76,31 @@ public class World {
 			}
 			
 		}
-
+		
 		for (EntityBase entity : entities) {
 			
-			g.drawImage(ResourceLoader.entityTextures.get(entity.type),
-					(int) (frameData.Width / 2 - cameraPos.X - entity.getPosition().X * 16 * frameData.GuiScale),
-					(int) (frameData.Height / 2 - cameraPos.Y - entity.getPosition().Y * 16 * frameData.GuiScale), 
+			BufferedImage texture = ResourceLoader.copyImage(ResourceLoader.entityTextures.get(entity.type));
+			
+			Graphics2D g2d = texture.createGraphics();
+			
+			AffineTransform at = new AffineTransform();
+			
+			int degrees = 0;
+			
+			if (entity.getFacing() == Direction.EAST) degrees = 90;
+			if (entity.getFacing() == Direction.SOUTH) degrees = 180;
+			if (entity.getFacing() == Direction.WEST) degrees = 270;
+			
+			at.rotate(Math.toRadians(degrees), texture.getWidth() / 2, texture.getHeight() / 2);
+			
+			g2d.setTransform(at);
+			
+			g2d.drawImage(texture, 0, 0, null);
+			g2d.dispose();
+			
+			g.drawImage(texture,
+					(int) (entity.getPosition().X * 16 * frameData.GuiScale - frameData.CameraPosition.X * 16 * frameData.GuiScale) + frameData.Width / 2,
+					(int) (entity.getPosition().Y * 16 * frameData.GuiScale - frameData.CameraPosition.Y * 16 * frameData.GuiScale) + frameData.Height / 2, 
 					(int) (16 * frameData.GuiScale + 1),
 					(int) (16 * frameData.GuiScale + 1),
 					null);
