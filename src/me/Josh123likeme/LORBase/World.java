@@ -51,7 +51,7 @@ public class World {
 			
 			for (int x = 0; x < floor[0].length; x++) {
 				
-				g.drawImage(ResourceLoader.floorTextures.get(floor[y][x]),
+				g.drawImage(ResourceLoader.getTexture(floor[y][x]),
 						(int) (x * 16 * frameData.GuiScale - frameData.CameraPosition.X * 16 * frameData.GuiScale) + frameData.Width / 2,
 						(int) (y * 16 * frameData.GuiScale - frameData.CameraPosition.Y * 16 * frameData.GuiScale) + frameData.Height / 2, 
 						(int) (16 * frameData.GuiScale + 1),
@@ -66,7 +66,7 @@ public class World {
 			
 			for (int x = 0; x < wall[0].length; x++) {
 				
-				g.drawImage(ResourceLoader.wallTextures.get(wall[y][x]),
+				g.drawImage(ResourceLoader.getTexture(wall[y][x]),
 						(int) (x * 16 * frameData.GuiScale - frameData.CameraPosition.X * 16 * frameData.GuiScale) + frameData.Width / 2,
 						(int) (y * 16 * frameData.GuiScale - frameData.CameraPosition.Y * 16 * frameData.GuiScale) + frameData.Height / 2, 
 						(int) (16 * frameData.GuiScale + 1),
@@ -79,24 +79,13 @@ public class World {
 		
 		for (EntityBase entity : entities) {
 			
-			BufferedImage texture = ResourceLoader.copyImage(ResourceLoader.entityTextures.get(entity.type));
-			
-			Graphics2D g2d = texture.createGraphics();
-			
-			AffineTransform at = new AffineTransform();
-			
 			int degrees = 0;
 			
 			if (entity.getFacing() == Direction.EAST) degrees = 90;
 			if (entity.getFacing() == Direction.SOUTH) degrees = 180;
 			if (entity.getFacing() == Direction.WEST) degrees = 270;
 			
-			at.rotate(Math.toRadians(degrees), texture.getWidth() / 2, texture.getHeight() / 2);
-			
-			g2d.setTransform(at);
-			
-			g2d.drawImage(texture, 0, 0, null);
-			g2d.dispose();
+			BufferedImage texture = ResourceLoader.rotateImageByDegrees(ResourceLoader.getTexture(entity.type), degrees);
 			
 			g.drawImage(texture,
 					(int) (entity.getPosition().X * 16 * frameData.GuiScale - frameData.CameraPosition.X * 16 * frameData.GuiScale) + frameData.Width / 2,

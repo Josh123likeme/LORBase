@@ -3,11 +3,13 @@ package me.Josh123likeme.LORBase.EntityHolder;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
 
 import javax.imageio.ImageIO;
 
 import me.Josh123likeme.LORBase.ResourceLoader;
 import me.Josh123likeme.LORBase.BlockHolder.Floor;
+import me.Josh123likeme.LORBase.BlockHolder.Wall;
 
 public enum Entity {
 
@@ -24,7 +26,9 @@ public enum Entity {
 		
 	}
 	
-	public static void loadTextures() {
+	public static HashMap<Entity, BufferedImage> loadTextures() {
+		
+		HashMap<Entity, BufferedImage> textures = new HashMap<Entity, BufferedImage>();
 		
 		for (int i = 0; i < Entity.values().length; i++) {
 			
@@ -46,9 +50,11 @@ public enum Entity {
 				
 			}
 			
-			ResourceLoader.entityTextures.put(Entity.values()[i], image);
+			textures.put(Entity.values()[i], image);
 			
 		}
+		
+		return textures;
 		
 	}
 	

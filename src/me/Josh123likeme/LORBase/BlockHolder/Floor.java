@@ -3,6 +3,7 @@ package me.Josh123likeme.LORBase.BlockHolder;
 import java.awt.image.*;
 import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
 
 import javax.imageio.*;
 
@@ -22,7 +23,9 @@ public enum Floor {
 		
 	}
 	
-	public static void loadTextures() {
+	public static HashMap<Floor, BufferedImage> loadTextures() {
+		
+		HashMap<Floor, BufferedImage> textures = new HashMap<Floor, BufferedImage>();
 		
 		for (int i = 0; i < Floor.values().length; i++) {
 			
@@ -44,9 +47,11 @@ public enum Floor {
 				
 			}
 			
-			ResourceLoader.floorTextures.put(Floor.values()[i], image);
+			textures.put(Floor.values()[i], image);
 			
 		}
+		
+		return textures;
 		
 	}
 	

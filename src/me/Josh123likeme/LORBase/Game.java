@@ -88,7 +88,7 @@ public class Game extends Canvas implements Runnable {
 	
 	public void run() {
 
-		double targetfps = 60d;
+		double targetfps = 10000d;
 		long targetDeltaFrame = Math.round((1d / targetfps) * 1000000000);
 		long lastSecond = System.nanoTime();
 		int frames = 0;
@@ -244,8 +244,8 @@ public class Game extends Canvas implements Runnable {
 
 		if (movementVector.X == 0 && movementVector.Y < 0) player.setFacing(Direction.NORTH);
 		if (movementVector.X == 0 && movementVector.Y > 0) player.setFacing(Direction.SOUTH);
-		if (movementVector.X < 0 && movementVector.Y == 0) player.setFacing(Direction.EAST);
-		if (movementVector.X > 0 && movementVector.Y == 0) player.setFacing(Direction.WEST);
+		if (movementVector.X > 0 && movementVector.Y == 0) player.setFacing(Direction.EAST);
+		if (movementVector.X < 0 && movementVector.Y == 0) player.setFacing(Direction.WEST);
 		
 	}
 	
