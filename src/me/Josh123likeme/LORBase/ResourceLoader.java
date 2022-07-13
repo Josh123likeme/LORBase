@@ -3,6 +3,7 @@ package me.Josh123likeme.LORBase;
 import java.util.HashMap;
 import java.awt.Graphics2D;
 import java.awt.image.*;
+import java.io.IOException;
 import java.awt.geom.AffineTransform;
 
 import me.Josh123likeme.LORBase.BlockHolder.Floor;
@@ -15,7 +16,7 @@ public abstract class ResourceLoader {
 	private static HashMap<Wall, BufferedImage> wallTextures = new HashMap<Wall, BufferedImage>();
 	private static HashMap<Entity, BufferedImage> entityTextures = new HashMap<Entity, BufferedImage>();
 	
-	public static void loadResources() {
+	public static void loadResources() throws IOException {
 		
 		floorTextures = Floor.loadTextures();
 		wallTextures = Wall.loadTextures();
@@ -43,7 +44,7 @@ public abstract class ResourceLoader {
 	
 	public static BufferedImage copyImage(BufferedImage source){
 		
-		//courtesy of clic on stsack overflow
+		//courtesy of clic on stack overflow
 		
 	    BufferedImage bi = new BufferedImage(source.getWidth(), source.getHeight(), source.getType());
 	    byte[] sourceData = ((DataBufferByte)source.getRaster().getDataBuffer()).getData();

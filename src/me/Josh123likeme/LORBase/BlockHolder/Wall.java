@@ -7,6 +7,7 @@ import java.util.HashMap;
 
 import javax.imageio.*;
 
+import assets.Assets;
 import me.Josh123likeme.LORBase.ResourceLoader;
 
 public enum Wall {
@@ -23,7 +24,7 @@ public enum Wall {
 		
 	}
 	
-	public static HashMap<Wall, BufferedImage> loadTextures() {
+	public static HashMap<Wall, BufferedImage> loadTextures() throws IOException {
 		
 		HashMap<Wall, BufferedImage> textures = new HashMap<Wall, BufferedImage>();
 		
@@ -31,21 +32,7 @@ public enum Wall {
 			
 			BufferedImage image = null;
 			
-			try {
-				
-			    image = ImageIO.read(new File("./src/assets/textures/block/" + Wall.values()[i].texturePath));
-			    
-			}
-			catch (IOException e) {
-				
-				try {
-					
-					image = ImageIO.read(new File("./src/assets/textures/DEFAULT.png"));
-					
-				}
-				catch (IOException e1) {}
-				
-			}
+			image = Assets.LoadTextureFromAssets("./textures/block/" + Wall.values()[i].texturePath);
 			
 			textures.put(Wall.values()[i], image);
 			

@@ -88,7 +88,7 @@ public class Game extends Canvas implements Runnable {
 	
 	public void run() {
 
-		double targetfps = 10000d;
+		double targetfps = 10000000d;
 		long targetDeltaFrame = Math.round((1d / targetfps) * 1000000000);
 		long lastSecond = System.nanoTime();
 		int frames = 0;

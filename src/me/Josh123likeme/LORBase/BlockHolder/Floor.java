@@ -7,11 +7,13 @@ import java.util.HashMap;
 
 import javax.imageio.*;
 
+import assets.Assets;
 import me.Josh123likeme.LORBase.ResourceLoader;
 
 public enum Floor {
 
 	LABYRINTH_FLOOR("LABYRINTH_FLOOR.png"),
+	MOGUS("MOGUS.png"), //for testing high res textures
 	
 	;
 	
@@ -23,29 +25,15 @@ public enum Floor {
 		
 	}
 	
-	public static HashMap<Floor, BufferedImage> loadTextures() {
+	public static HashMap<Floor, BufferedImage> loadTextures() throws IOException {
 		
 		HashMap<Floor, BufferedImage> textures = new HashMap<Floor, BufferedImage>();
 		
 		for (int i = 0; i < Floor.values().length; i++) {
 			
 			BufferedImage image = null;
-			
-			try {
 				
-			    image = ImageIO.read(new File("./src/assets/textures/block/" + Floor.values()[i].texturePath));
-			    
-			}
-			catch (IOException e) {
-				
-				try {
-					
-					image = ImageIO.read(new File("./src/assets/textures/DEFAULT.png"));
-					
-				}
-				catch (IOException e1) {}
-				
-			}
+		    image = Assets.LoadTextureFromAssets("./textures/block/" + Floor.values()[i].texturePath);
 			
 			textures.put(Floor.values()[i], image);
 			

@@ -39,6 +39,8 @@ public class World {
 			
 		}
 		
+		// /\
+		
 	}
 	
 	public void render(Graphics g) {
@@ -47,9 +49,25 @@ public class World {
 		
 		Vector2D cameraPos = frameData.CameraPosition;
 		
-		for (int y = 0; y < floor.length; y++) {
+		int BlocksOnScreenX = (int) Math.ceil(frameData.Width / (16 * frameData.GuiScale));
+		int BlocksOnScreenY = (int) Math.ceil(frameData.Height / (16 * frameData.GuiScale));
+		
+		BlocksOnScreenX++;
+		BlocksOnScreenY++;
+		
+		int tlx = (int) Math.floor(frameData.CameraPosition.X) - BlocksOnScreenX / 2;
+		int tly = (int) Math.floor(frameData.CameraPosition.Y) - BlocksOnScreenY / 2;
+		int brx = (int) Math.ceil(frameData.CameraPosition.X) + BlocksOnScreenX / 2;
+		int bry = (int) Math.ceil(frameData.CameraPosition.Y) + BlocksOnScreenY / 2;
+		
+		if (tlx < 0) tlx = 0;
+		if (tly < 0) tly = 0;
+		if (brx > floor[0].length - 1) brx = floor[0].length - 1;
+		if (bry > floor.length - 1) bry = floor.length - 1;
+		
+		for (int y = tly; y < bry; y++) {
 			
-			for (int x = 0; x < floor[0].length; x++) {
+			for (int x = tlx; x < brx; x++) {
 				
 				g.drawImage(ResourceLoader.getTexture(floor[y][x]),
 						(int) (x * 16 * frameData.GuiScale - frameData.CameraPosition.X * 16 * frameData.GuiScale) + frameData.Width / 2,
@@ -62,9 +80,9 @@ public class World {
 			
 		}
 		
-		for (int y = 0; y < wall.length; y++) {
+		for (int y = tly; y < bry; y++) {
 			
-			for (int x = 0; x < wall[0].length; x++) {
+			for (int x = tlx; x < brx; x++) {
 				
 				g.drawImage(ResourceLoader.getTexture(wall[y][x]),
 						(int) (x * 16 * frameData.GuiScale - frameData.CameraPosition.X * 16 * frameData.GuiScale) + frameData.Width / 2,
@@ -76,6 +94,13 @@ public class World {
 			}
 			
 		}
+		
+		g.drawImage(ResourceLoader.getTexture(Floor.MOGUS),
+				(int) (1 * 16 * frameData.GuiScale - frameData.CameraPosition.X * 16 * frameData.GuiScale) + frameData.Width / 2,
+				(int) (1 * 16 * frameData.GuiScale - frameData.CameraPosition.Y * 16 * frameData.GuiScale) + frameData.Height / 2, 
+				(int) (16 * frameData.GuiScale + 1),
+				(int) (16 * frameData.GuiScale + 1),
+				null);
 		
 		for (EntityBase entity : entities) {
 			

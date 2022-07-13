@@ -8,12 +8,9 @@ public abstract class Generators {
 
 	private static Random random = new Random();
 	
-	private static Vector2D pos;
-	private static Boolean[][] maze;
-	
 	public static Boolean[][] generateRandomMaze(int width, int height) {
 		
-		maze = new Boolean[height][width];
+		Boolean[][] maze = new Boolean[height][width];
 		
 		for (int i = 0; i < maze[0].length; i++) {
 			
@@ -41,23 +38,15 @@ public abstract class Generators {
 			
 		}
 		
-		goForward(new Vector2D(2, (int) (2 * (height / 4))), new Vector2D(1,0));
+		goForward(new Vector2D(2, (int) (2 * (height / 4))), new Vector2D(1,0), maze);
 		
 		return maze;
 		
 	}
 	
-	private static void goForward(Vector2D pos, Vector2D dir) {
+	private static void goForward(Vector2D pos, Vector2D dir, Boolean[][] maze) {
 		
-		/*
-		try {
-			Thread.sleep(1);
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		*/
-		int maxDistance = maxDistance(pos, dir);
+		int maxDistance = maxDistance(pos, dir, maze);
 		
 		if (maxDistance <= 0) return;
 		
@@ -93,25 +82,25 @@ public abstract class Generators {
 			
 			case 0:
 				
-				goForward(new Vector2D(pos.X, pos.Y), new Vector2D(1,0));
+				goForward(new Vector2D(pos.X, pos.Y), new Vector2D(1,0), maze);
 				
 				break;
 				
 			case 1:
 				
-				goForward(new Vector2D(pos.X, pos.Y), new Vector2D(-1,0));
+				goForward(new Vector2D(pos.X, pos.Y), new Vector2D(-1,0), maze);
 				
 				break;
 				
 			case 2:
 				
-				goForward(new Vector2D(pos.X, pos.Y), new Vector2D(0,-1));
+				goForward(new Vector2D(pos.X, pos.Y), new Vector2D(0,-1), maze);
 				
 				break;
 				
 			case 3:
 				
-				goForward(new Vector2D(pos.X, pos.Y), new Vector2D(0,1));
+				goForward(new Vector2D(pos.X, pos.Y), new Vector2D(0,1), maze);
 				
 				break;
 			
@@ -121,7 +110,7 @@ public abstract class Generators {
 		
 	}
 	
-	private static int maxDistance(Vector2D pos, Vector2D dir) {
+	private static int maxDistance(Vector2D pos, Vector2D dir, Boolean[][] maze) {
 		
 		int x = (int) pos.X;
 		int y = (int) pos.Y;
