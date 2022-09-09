@@ -12,13 +12,13 @@ public abstract class TUID {
 		
 		String id = "";
 		
-		for (int i = 0; i < 15; i++) {
+		for (int i = 0; i < 16; i++) {
 			
 			id += Long.toHexString(random.nextInt(16));
 			
 		}
 		
-		return timestamp + "-" + id;
+		return timestamp + id;
 		
 	}
 	

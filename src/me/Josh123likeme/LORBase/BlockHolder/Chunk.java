@@ -1,8 +1,7 @@
 package me.Josh123likeme.LORBase.BlockHolder;
 
-import java.awt.image.*;
-import java.util.HashMap;
 import java.awt.Graphics;
+import java.awt.image.BufferedImage;
 
 public class Chunk {
 	
@@ -53,8 +52,6 @@ public class Chunk {
 		
 		if (chunkModified) {
 			
-			long start = System.currentTimeMillis();
-			
 			stitchTexture();
 			
 			chunkModified = false;
@@ -66,8 +63,6 @@ public class Chunk {
 	}
 
 	private void stitchTexture() {
-		
-		Long startTime = System.currentTimeMillis();
 		
 		chunkTexture = new BufferedImage(chunkSize * defaultBlockTextureSize, chunkSize * defaultBlockTextureSize, BufferedImage.TYPE_INT_ARGB);
 		
@@ -96,8 +91,6 @@ public class Chunk {
 			}
 			
 		}
-		
-		//System.out.println("Time taken to stitch chunk: " + (System.currentTimeMillis() - startTime) + "ms"); //TODO debug
 		
 	}
 	

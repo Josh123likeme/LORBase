@@ -1,15 +1,14 @@
 package me.Josh123likeme.LORBase;
 
-import java.util.HashMap;
 import java.awt.Graphics2D;
-import java.awt.image.*;
-import java.io.IOException;
 import java.awt.geom.AffineTransform;
+import java.awt.image.BufferedImage;
+import java.awt.image.DataBufferByte;
+import java.util.HashMap;
 
 import me.Josh123likeme.LORBase.BlockHolder.Floor;
 import me.Josh123likeme.LORBase.BlockHolder.Wall;
 import me.Josh123likeme.LORBase.EntityHolder.Entity;
-import me.Josh123likeme.LORBase.ItemHolder.Item;
 
 public abstract class ResourceLoader {
 

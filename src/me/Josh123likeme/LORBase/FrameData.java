@@ -1,9 +1,6 @@
 package me.Josh123likeme.LORBase;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import me.Josh123likeme.LORBase.Types.*;
+import me.Josh123likeme.LORBase.Types.Vector2D;
 
 public class FrameData {
 

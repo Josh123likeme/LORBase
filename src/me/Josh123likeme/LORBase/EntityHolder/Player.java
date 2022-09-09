@@ -1,6 +1,7 @@
 package me.Josh123likeme.LORBase.EntityHolder;
 
-import me.Josh123likeme.LORBase.Types.*;
+import me.Josh123likeme.LORBase.Types.Cardinal;
+import me.Josh123likeme.LORBase.Types.Vector2D;
 
 public class Player extends EntityBase implements ICollidable {
 	

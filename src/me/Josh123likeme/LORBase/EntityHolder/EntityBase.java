@@ -1,15 +1,6 @@
 package me.Josh123likeme.LORBase.EntityHolder;
-
-import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.IOException;
-
-import javax.imageio.ImageIO;
-
-import me.Josh123likeme.LORBase.Main;
-import me.Josh123likeme.LORBase.ResourceLoader;
-import me.Josh123likeme.LORBase.BlockHolder.Wall;
-import me.Josh123likeme.LORBase.Types.*;
+import me.Josh123likeme.LORBase.Types.Cardinal;
+import me.Josh123likeme.LORBase.Types.Vector2D;
 
 public abstract class EntityBase {
 	

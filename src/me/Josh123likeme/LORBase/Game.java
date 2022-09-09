@@ -4,14 +4,12 @@ import java.awt.Canvas;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics;
-import java.awt.image.BufferStrategy;
 import java.awt.event.KeyEvent;
-import java.util.ArrayList;
+import java.awt.image.BufferStrategy;
 import java.util.List;
 
 import me.Josh123likeme.LORBase.BlockHolder.Floor;
 import me.Josh123likeme.LORBase.EntityHolder.Player;
-import me.Josh123likeme.LORBase.Generators.LabyrinthMaze;
 import me.Josh123likeme.LORBase.InputListener.KeyboardWitness;
 import me.Josh123likeme.LORBase.InputListener.MouseWitness;
 import me.Josh123likeme.LORBase.Types.Cardinal;
@@ -114,7 +112,7 @@ public class Game extends Canvas implements Runnable {
 				
 				lastSecond = System.nanoTime();
 				
-				//updateInfrequent();
+				updateInfrequent();
 				
 			}
 			

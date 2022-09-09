@@ -1,16 +1,10 @@
 package me.Josh123likeme.LORBase.EntityHolder;
 
 import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.IOException;
 import java.util.HashMap;
-
-import javax.imageio.ImageIO;
 
 import assets.Assets;
 import me.Josh123likeme.LORBase.ResourceLoader;
-import me.Josh123likeme.LORBase.BlockHolder.Floor;
-import me.Josh123likeme.LORBase.BlockHolder.Wall;
 
 public enum Entity {
 

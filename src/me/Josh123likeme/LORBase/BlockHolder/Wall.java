@@ -1,11 +1,7 @@
 package me.Josh123likeme.LORBase.BlockHolder;
 
-import java.awt.image.*;
-import java.io.File;
-import java.io.IOException;
+import java.awt.image.BufferedImage;
 import java.util.HashMap;
-
-import javax.imageio.*;
 
 import assets.Assets;
 import me.Josh123likeme.LORBase.ResourceLoader;

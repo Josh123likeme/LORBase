@@ -1,6 +1,6 @@
 package me.Josh123likeme.LORBase.ItemHolder;
 
-import java.awt.image.*;
+import java.awt.image.BufferedImage;
 
 public class VIAL extends Item {
 

@@ -1,8 +1,7 @@
 package me.Josh123likeme.LORBase.Generators;
 
-import java.awt.*;
-import java.util.ArrayList;
-import java.util.List;
+import java.awt.Color;
+import java.awt.Graphics;
 import java.util.Random;
 
 import me.Josh123likeme.LORBase.BlockHolder.Floor;

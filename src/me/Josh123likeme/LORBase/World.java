@@ -1,18 +1,18 @@
 package me.Josh123likeme.LORBase;
 
-import me.Josh123likeme.LORBase.BlockHolder.*;
-import me.Josh123likeme.LORBase.EntityHolder.EntityBase;
-import me.Josh123likeme.LORBase.EntityHolder.Player;
-import me.Josh123likeme.LORBase.Generators.SimpleMaze;
-import me.Josh123likeme.LORBase.Generators.*;
-import me.Josh123likeme.LORBase.Types.Cardinal;
-import me.Josh123likeme.LORBase.Types.Vector2D;
-
 import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
+
+import me.Josh123likeme.LORBase.BlockHolder.Chunk;
+import me.Josh123likeme.LORBase.BlockHolder.Floor;
+import me.Josh123likeme.LORBase.BlockHolder.Wall;
+import me.Josh123likeme.LORBase.EntityHolder.EntityBase;
+import me.Josh123likeme.LORBase.EntityHolder.Player;
+import me.Josh123likeme.LORBase.Generators.Generator;
+import me.Josh123likeme.LORBase.Generators.SimpleMaze;
+import me.Josh123likeme.LORBase.Types.Cardinal;
+import me.Josh123likeme.LORBase.Types.Vector2D;
 
 public class World {
 	
