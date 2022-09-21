@@ -2,13 +2,17 @@ package me.Josh123likeme.LORBase;
 
 import java.awt.event.KeyEvent;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import me.Josh123likeme.LORBase.Types.Cardinal;
 import me.Josh123likeme.LORBase.Types.Vector2D;
+import me.Josh123likeme.LORBase.Game.GameState;;
 
 public class DebugInfo {
 
+	public GameState GameState;
+	
 	public int FPS;
 	public double DeltaFrame;
 	
@@ -19,50 +23,49 @@ public class DebugInfo {
 	public Cardinal PlayerFacing;
 	public Vector2D CameraPos;
 	
-	public double GuiScale;
+	public double Zoom;
 	
-	private String task;
-	private String progress;
+	private HashMap<String, String> tasks = new HashMap<String, String>();
 	
-	public String getTask() throws Exception {
+	public void addTask(String task) {
 		
-		if (task.equals(null)) throw new Exception("No task currently running");
+		if (tasks.keySet().contains(task)) throw new IllegalArgumentException("There is already a task running with that name");
 		
-		if (progress.equals(null)) {
-			
-			return task;
-			
-		}
-		
-		return task + " (" + progress + ")";
+		tasks.put(task, null);
 		
 	}
 	
-	public void setTask(String task) {
+	public void addTask(String task, String progress) {
 		
-		this.task = task;
-		this.progress = null;
+		if (tasks.keySet().contains(task)) throw new IllegalArgumentException("There is already a task running with that name");
 		
-	}
-	public void setTask(String task, String progress) {
-		
-		this.task = task;
-		this.progress = progress;
+		tasks.put(task, progress);
 		
 	}
-	public void completeTask() {
+	
+	public void updateTask(String task, String progress) {
 		
-		this.task = null;
-		this.progress = null;
+		if (!tasks.keySet().contains(task)) throw new IllegalArgumentException("There isn't a task running with that name");
+		
+		tasks.put(task, progress);
+		
+	}
+	
+	public void removeTask(String task) {
+		
+		tasks.remove(task);
 		
 	}
 	
 	public List<String> getDebugInfo() {
 		
-		List<String> info = new ArrayList<String>();
+		List<String> lines = new ArrayList<String>();
 		
-		info.add("FPS: " + FPS + " (Delta Frame: " + DeltaFrame + ")");
-		info.add("Is Dragging: " + IsDragging);
+		lines.add("Game State: " + GameState);
+		
+		lines.add("FPS: " + FPS + " (Delta Frame: " + DeltaFrame + ")");
+		
+		lines.add("Is Dragging: " + IsDragging);
 		
 		String keysPressed = "";
 		
@@ -72,14 +75,32 @@ public class DebugInfo {
 			
 		}
 		
-		info.add("Keys pressed: " + keysPressed);
+		lines.add("Keys pressed: " + keysPressed);
 		
-		info.add("Player Pos: (" + PlayerPos.X + ", " + PlayerPos.Y + ") Facing: " + PlayerFacing);
-		info.add("Camera Pos: (" + CameraPos.X + ", " + CameraPos.Y + ")");
+		if (PlayerPos != null) lines.add("Player Pos: (" + PlayerPos.X + ", " + PlayerPos.Y + ") Facing: " + PlayerFacing);
+		else lines.add("Player Pos: N/A");
 		
-		info.add("GUI Scale: " + GuiScale);
+		if (CameraPos != null) lines.add("Camera Pos: (" + CameraPos.X + ", " + CameraPos.Y + ")");
+		else lines.add("CameraPos: N/A");
 		
-		return info;
+		lines.add("Zoom: " + Zoom);
+		
+		return lines;
+		
+	}
+	
+	public List<String> getTaskInfo(){
+		
+		List<String> lines = new ArrayList<String>();
+		
+		for (String task : tasks.keySet()) {
+			
+			if (tasks.get(task) != null) lines.add(task + " (" + tasks.get(task) + ")");	
+			else lines.add(task);
+			
+		}
+		
+		return lines;
 		
 	}
 	

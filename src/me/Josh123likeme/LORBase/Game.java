@@ -4,16 +4,20 @@ import java.awt.Canvas;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics;
-import java.awt.event.KeyEvent;
 import java.awt.image.BufferStrategy;
 import java.util.List;
 
+import javax.swing.plaf.basic.BasicGraphicsUtils;
+
 import me.Josh123likeme.LORBase.BlockHolder.Floor;
+import me.Josh123likeme.LORBase.BlockHolder.Wall;
 import me.Josh123likeme.LORBase.EntityHolder.Player;
+import me.Josh123likeme.LORBase.InputListener.ControlHolder.ButtonType;
 import me.Josh123likeme.LORBase.InputListener.KeyboardWitness;
 import me.Josh123likeme.LORBase.InputListener.MouseWitness;
 import me.Josh123likeme.LORBase.Types.Cardinal;
 import me.Josh123likeme.LORBase.Types.Vector2D;
+import me.Josh123likeme.LORBase.UI.Menu;
 
 public class Game extends Canvas implements Runnable {
 
@@ -31,25 +35,41 @@ public class Game extends Canvas implements Runnable {
 	private FrameData frameData;
 	
 	private DebugInfo debugInfo;
+	private WorldData worldData;
 	private boolean displayDebugInfo = true;
 	
 	public World world;
+	
+	private Menu menu; //TODO temp menu test
+	private boolean menuOpen = true; //TODO temp menu test
 	
 	private int fps = 0;
 	
 	private Player player;
 	
+	private GameState gameState = GameState.START_UP;
+	
 	public Game() {
 		
 		window = new Window(INITIAL_WIDTH, INITIAL_HEIGHT, "The Labyrinth Of Recursion", this);
-		frameData = new FrameData();
+		
 		debugInfo = new DebugInfo();
-		frameData.CameraPosition = new Vector2D(50, 50);
-		frameData.GuiScale = 5d;
-		player = new Player(new Vector2D(1, 1), Cardinal.NORTH);
-		world = new World(player);
+		
+		frameData = new FrameData();
+		worldData = new WorldData();
 		
 		initInputs();
+		
+		gameState = GameState.MAIN_MENU;
+		
+		//TODO temp force labyrinth load
+		startlabyrinth();
+		
+		//TODO temp menu test
+		menu = new Menu();
+		
+		menu.createButton("Test", 100, 100, 200, 200);
+		menu.createButton(ResourceLoader.getTexture(Wall.LABYRINTH_WALL), 100, 400, 200, 200);
 		
 	}
 	
@@ -120,12 +140,26 @@ public class Game extends Canvas implements Runnable {
 			
 			long nextTime = System.nanoTime() + targetDeltaFrame;
 			
-			updatePlayer();
+			if (gameState == GameState.IN_GAME) {
+				
+				//TODO temp zoom
+				if (keyboardWitness.isButtonHeld(ButtonType.ZOOM_IN)) {
+					
+					worldData.Zoom += 0.01;
+					
+				}
+				else if (keyboardWitness.isButtonHeld(ButtonType.ZOOM_OUT)) {
+					
+					worldData.Zoom -= 0.01;
+					
+				}
+				
+				updatePlayer();
+				updateWorldData();
+				
+			}
 			
 			frameData.DeltaFrame = ((double) (System.nanoTime() - lastFrame)) / 1000000000;
-			
-			frameData.CameraPosition.X = player.getPosition().X;
-			frameData.CameraPosition.Y = player.getPosition().Y;
 			
 			updateFrameData();
 			updateDebugInfo();
@@ -156,25 +190,17 @@ public class Game extends Canvas implements Runnable {
 		g.setColor(Color.black); 
 		g.fillRect(0, 0, getWidth(), getHeight());
 		
-		//TODO temporary scaling 
-		if (keyboardWitness.getHeldKeys().contains(KeyEvent.VK_EQUALS)) {
-			
-			frameData.GuiScale += 0.01;
-			
-		}
-		else if (keyboardWitness.getHeldKeys().contains(KeyEvent.VK_MINUS)) {
-			
-			frameData.GuiScale -= 0.01;
-			
-		}
-		
 		//put rendering stuff here
 		
-		world.render(g);
+		if (gameState == GameState.IN_GAME) {
+			
+			world.render(g);
+			
+		}	
 		
 		//debugging stuff
 		
-		if (keyboardWitness.getHeldKeys().contains(KeyEvent.VK_F3)) displayDebugInfo = !displayDebugInfo;
+		if (keyboardWitness.isButtonHeld(ButtonType.DEBUG_TOGGLE)) displayDebugInfo = !displayDebugInfo;
 		
 		if (displayDebugInfo) {
 			
@@ -188,6 +214,22 @@ public class Game extends Canvas implements Runnable {
 				g.drawString(info.get(i), getWidth() / 100, (getHeight() / 25) * (i + 1));
 				
 			}
+			
+			g.drawString("Tasks:", getWidth() - (getWidth() / 100) - g.getFontMetrics().stringWidth("Tasks:"), (getHeight() / 25));
+			
+			info = debugInfo.getTaskInfo();
+			
+			for (int i = 0; i < info.size(); i++) {
+				
+				g.drawString(info.get(i), getWidth() - (getWidth() / 100) - g.getFontMetrics().stringWidth(info.get(i)), (getHeight() / 25) * (i + 2));
+				
+			}
+			
+		}
+		
+		if (menuOpen) {
+			
+			menu.render(g);
 			
 		}
 		
@@ -211,7 +253,22 @@ public class Game extends Canvas implements Runnable {
 		
 	}
 	
+	private void updateWorldData() {
+		
+		worldData.CameraPosition.X = player.getPosition().X;
+		worldData.CameraPosition.Y = player.getPosition().Y;
+		
+	}
+	
+	public WorldData getWorldData() {
+		
+		return worldData;
+		
+	}
+	
 	private void updateDebugInfo() {
+		
+		debugInfo.GameState = gameState;
 		
 		debugInfo.FPS = fps;
 		debugInfo.DeltaFrame = frameData.DeltaFrame;
@@ -219,24 +276,30 @@ public class Game extends Canvas implements Runnable {
 		debugInfo.IsDragging = mouseWitness.isDragging();
 		debugInfo.HeldKeys = keyboardWitness.getHeldKeys();
 		
-		debugInfo.PlayerPos = player.getPosition();
-		debugInfo.PlayerFacing = player.getFacing();
-		debugInfo.CameraPos = frameData.CameraPosition;
+		try {
+			
+			debugInfo.PlayerPos = player.getPosition();
+			debugInfo.PlayerFacing = player.getFacing();
+			
+		} catch (Exception e) { }
 		
-		debugInfo.GuiScale = frameData.GuiScale;
+		try {
+			
+			debugInfo.CameraPos = worldData.CameraPosition;
+			debugInfo.Zoom = worldData.Zoom;
+			
+		} catch (Exception e) { }
 		
 	}
 	
 	private void updatePlayer() {
 		
-		List<Integer> keys = keyboardWitness.getHeldKeys();
-		
 		Vector2D movementVector = new Vector2D(0, 0);
 		
-		if (keys.contains(87)) movementVector.Y -= 1;
-		if (keys.contains(65)) movementVector.X -= 1;
-		if (keys.contains(83)) movementVector.Y += 1;
-		if (keys.contains(68)) movementVector.X += 1;
+		if (keyboardWitness.isButtonHeld(ButtonType.MOVE_UP)) movementVector.Y -= 1;
+		if (keyboardWitness.isButtonHeld(ButtonType.MOVE_LEFT)) movementVector.X -= 1;
+		if (keyboardWitness.isButtonHeld(ButtonType.MOVE_DOWN)) movementVector.Y += 1;
+		if (keyboardWitness.isButtonHeld(ButtonType.MOVE_RIGHT)) movementVector.X += 1;
 
 		movementVector.normalise();
 		
@@ -257,6 +320,31 @@ public class Game extends Canvas implements Runnable {
 	private void updateInfrequent() {
 		
 		
+		
+	}
+	
+	private void startlabyrinth() {
+		
+		player = new Player(new Vector2D(0, 0), Cardinal.NORTH);
+		
+		worldData = new WorldData();
+		
+		worldData.CameraPosition = new Vector2D(0, 0);
+		worldData.Zoom = 5d;
+		
+		world = new World(player);
+		
+		gameState = GameState.IN_GAME;
+		
+	}
+	
+	public enum GameState {
+		
+		START_UP,
+		MAIN_MENU,
+		IN_GAME,
+		
+		;
 		
 	}
 	

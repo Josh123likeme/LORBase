@@ -6,9 +6,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class KeyboardWitness implements KeyListener {
+import me.Josh123likeme.LORBase.InputListener.ControlHolder.ButtonType;
 
-	/*
+/*
 3 -- Cancel
 8 -- Backspace
 9 -- Tab
@@ -196,13 +196,14 @@ public class KeyboardWitness implements KeyListener {
 65487 -- Paste
 65488 -- Find
 65489 -- Cut
-	 */
+*/
+
+public class KeyboardWitness implements KeyListener {
 	
 	private ArrayList<Integer> keysPressed = new ArrayList<Integer>();
 	
 	@Override
 	public void keyTyped(KeyEvent e) {
-		// TODO Auto-generated method stub
 		
 	}
 
@@ -230,5 +231,33 @@ public class KeyboardWitness implements KeyListener {
 		return keysPressed;
 		
 	}
+	
+	public List<ButtonType> getHeldButtons() {
+		
+		List<ButtonType> buttons = new ArrayList<ButtonType>();
+		
+		for (int key : keysPressed) {
+			
+			try {
+				
+				buttons.add(ControlHolder.getButton(key));
+				
+			} catch (IllegalArgumentException e) {
+				
+				continue;
+				
+			}			
+		
+		}
+		
+		return buttons;
+		
+	}
 
+	public boolean isButtonHeld(ButtonType button) {
+		
+		return keysPressed.contains(ControlHolder.getKey(button));
+		
+	}
+	
 }

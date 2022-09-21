@@ -40,19 +40,18 @@ public class World {
 	public void render(Graphics g) {
 		
 		FrameData frameData = Main.game.getFrameData();
+		WorldData worldData = Main.game.getWorldData();
 		
-		Vector2D cameraPos = frameData.CameraPosition;
-		
-		int blocksOnScreenX = (int) Math.ceil(frameData.Width / (16 * frameData.GuiScale));
-		int BlocksOnScreenY = (int) Math.ceil(frameData.Height / (16 * frameData.GuiScale));
+		int blocksOnScreenX = (int) Math.ceil(frameData.Width / (16 * worldData.Zoom));
+		int BlocksOnScreenY = (int) Math.ceil(frameData.Height / (16 * worldData.Zoom));
 		
 		blocksOnScreenX += Chunk.getChunkSize() * 2;
 		BlocksOnScreenY += Chunk.getChunkSize() * 2;
 		
-		int tlx = (int) (Math.floor(frameData.CameraPosition.X) - blocksOnScreenX / 2) / Chunk.getChunkSize();
-		int tly = (int) (Math.floor(frameData.CameraPosition.Y) - BlocksOnScreenY / 2) / Chunk.getChunkSize();
-		int brx = (int) (Math.ceil(frameData.CameraPosition.X) + blocksOnScreenX / 2) / Chunk.getChunkSize();
-		int bry = (int) (Math.ceil(frameData.CameraPosition.Y) + BlocksOnScreenY / 2) / Chunk.getChunkSize();
+		int tlx = (int) (Math.floor(worldData.CameraPosition.X) - blocksOnScreenX / 2) / Chunk.getChunkSize();
+		int tly = (int) (Math.floor(worldData.CameraPosition.Y) - BlocksOnScreenY / 2) / Chunk.getChunkSize();
+		int brx = (int) (Math.ceil(worldData.CameraPosition.X) + blocksOnScreenX / 2) / Chunk.getChunkSize();
+		int bry = (int) (Math.ceil(worldData.CameraPosition.Y) + BlocksOnScreenY / 2) / Chunk.getChunkSize();
 		
 		if (tlx < 0) tlx = 0;
 		if (tly < 0) tly = 0;
@@ -64,9 +63,9 @@ public class World {
 			for (int x = tlx; x <= brx; x++) {
 				
 				chunks[y][x].renderChunk(
-						(int) (x * 16 * Chunk.getChunkSize() * frameData.GuiScale - frameData.CameraPosition.X * 16 * frameData.GuiScale) + frameData.Width / 2,
-						(int) (y * 16 * Chunk.getChunkSize() * frameData.GuiScale - frameData.CameraPosition.Y * 16 * frameData.GuiScale) + frameData.Height / 2,
-						(int) (16 * Chunk.getChunkSize() * frameData.GuiScale + 1), g);
+						(int) (x * 16 * Chunk.getChunkSize() * worldData.Zoom - worldData.CameraPosition.X * 16 * worldData.Zoom) + frameData.Width / 2,
+						(int) (y * 16 * Chunk.getChunkSize() * worldData.Zoom - worldData.CameraPosition.Y * 16 * worldData.Zoom) + frameData.Height / 2,
+						(int) (16 * Chunk.getChunkSize() * worldData.Zoom + 1), g);
 				
 
 			}
@@ -84,10 +83,10 @@ public class World {
 			BufferedImage texture = ResourceLoader.rotateImageByDegrees(entity.type.getTexture(), degrees);
 			
 			g.drawImage(texture,
-					(int) (entity.getPosition().X * 16 * frameData.GuiScale - frameData.CameraPosition.X * 16 * frameData.GuiScale) + frameData.Width / 2,
-					(int) (entity.getPosition().Y * 16 * frameData.GuiScale - frameData.CameraPosition.Y * 16 * frameData.GuiScale) + frameData.Height / 2, 
-					(int) (16 * frameData.GuiScale + 1),
-					(int) (16 * frameData.GuiScale + 1),
+					(int) (entity.getPosition().X * 16 * worldData.Zoom - worldData.CameraPosition.X * 16 * worldData.Zoom) + frameData.Width / 2,
+					(int) (entity.getPosition().Y * 16 * worldData.Zoom - worldData.CameraPosition.Y * 16 * worldData.Zoom) + frameData.Height / 2, 
+					(int) (16 * worldData.Zoom + 1),
+					(int) (16 * worldData.Zoom + 1),
 					null);
 			
 		}
