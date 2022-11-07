@@ -16,13 +16,16 @@ import me.Josh123likeme.LORBase.WorldData;
 import me.Josh123likeme.LORBase.BlockHolder.Floor;
 import me.Josh123likeme.LORBase.BlockHolder.Wall;
 import me.Josh123likeme.LORBase.EntityHolder.*;
+import me.Josh123likeme.LORBase.Generators.BoxyMaze;
 import me.Josh123likeme.LORBase.Generators.CaveMaze;
+import me.Josh123likeme.LORBase.Generators.EmptyMaze;
 import me.Josh123likeme.LORBase.Generators.Generator;
 import me.Josh123likeme.LORBase.InputListener.MouseWitness;
 import me.Josh123likeme.LORBase.InputListener.ControlHolder.ButtonType;
 import me.Josh123likeme.LORBase.ParticleHolder.*;
 import me.Josh123likeme.LORBase.Types.Vector2D;
 import me.Josh123likeme.LORBase.UI.ProgressBar;
+import me.Josh123likeme.LORBase.Utils.AStar;
 
 public class World {
 	
@@ -81,7 +84,7 @@ public class World {
 		
 		entities.add(player);
 		
-		entities.add(new ZOMBIE(this, player.getPosition(), 0d));
+		entities.add(new ZOMBIE(this, spawnLocations.get(random.nextInt(spawnLocations.size())), 0));
 		
 	}
 	
@@ -205,7 +208,7 @@ public class World {
 		List<Entity> entitiesToRemove = new ArrayList<Entity>();
 		
 		for (Entity entity : entities) {
-			
+
 			if (entity instanceof IHealthy) {
 				
 				if (((IHealthy) entity).getHealth() <= 0) {
@@ -277,8 +280,6 @@ public class World {
 	}
 	
 	private void updatePlayer() {
-		
-		if (inventoryOpen) return;
 		
 		Game game = Main.game;
 		

@@ -19,8 +19,6 @@ public class ITEM_ENTITY extends Entity {
 		this.droppedTime = System.nanoTime();
 		this.pickupCooldown = pickupCooldown;
 		
-		world.addEntity(this);
-		
 	}
 	
 	public BufferedImage getTexture() {

@@ -7,6 +7,7 @@ import me.Josh123likeme.LORBase.ItemHolder.Item;
 import me.Josh123likeme.LORBase.ItemHolder.ZOMBIE_FLESH;
 import me.Josh123likeme.LORBase.ParticleHolder.DAMAGE_NUMBER;
 import me.Josh123likeme.LORBase.Types.Vector2D;
+import me.Josh123likeme.LORBase.Utils.AStar;
 
 public class ZOMBIE extends Entity implements ISmart, ICollidable, IMoveable, IHealthy {
 	
@@ -91,7 +92,9 @@ public class ZOMBIE extends Entity implements ISmart, ICollidable, IMoveable, IH
 	@Override
 	public void updateBrain() {
 		
+		//update brain
 		if (pos.distanceTo(world.player.getPosition()) > getViewDistance()) state = WanderState.WANDER;
+		else if (pos.distanceTo(world.player.getPosition()) > 1) state = WanderState.CHASE;
 		else state = WanderState.ATTACK;
 		
 		double angle = 0d;
@@ -126,26 +129,36 @@ public class ZOMBIE extends Entity implements ISmart, ICollidable, IMoveable, IH
 			
 			break;
 			
+		case CHASE:
+			
+			Vector2D[] path = AStar.doAStar(world, pos, world.player.getPosition());
+			
+			for (Vector2D vector : path) {
+				
+				world.addParticle(new DAMAGE_NUMBER(vector, 0));
+				
+			}
+			
+			target = path[0];
+			
+			break;
+			
 		case ATTACK:
-
-			target = world.player.getPosition().clone();
 		
+			target = world.player.getPosition();
+			
 			break;
 		
 		}	
 		
-		if (pos.distanceTo(target) > 0.4) {
-			
-			angle = pos.directionTo(target);
-			
-			next = pos.clone();
-			next.X += Math.cos(Math.toRadians(angle)) * getMovementSpeed() * Main.game.getDeltaFrame();
-			next.Y += Math.sin(Math.toRadians(angle)) * getMovementSpeed() * Main.game.getDeltaFrame();
-			
-			facing = angle;
-			moveEntity(next, world);
-			
-		}
+		angle = pos.directionTo(target);
+		
+		next = pos.clone();
+		next.X += Math.cos(Math.toRadians(angle)) * getMovementSpeed() * Main.game.getDeltaFrame();
+		next.Y += Math.sin(Math.toRadians(angle)) * getMovementSpeed() * Main.game.getDeltaFrame();
+		
+		facing = angle;
+		moveEntity(next, world);
 		
 		if (state == WanderState.ATTACK && pos.distanceTo(target) < 0.8 && System.nanoTime() > nextAttackTime) {
 			
