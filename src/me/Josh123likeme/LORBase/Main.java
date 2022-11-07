@@ -1,7 +1,6 @@
 package me.Josh123likeme.LORBase;
 
 import me.Josh123likeme.LORBase.Types.Vector2D;
-import me.Josh123likeme.LORBase.Utils.AStar;
 
 public class Main {
 

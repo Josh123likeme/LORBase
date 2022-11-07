@@ -181,6 +181,8 @@ public class Inventory {
 					
 					held = null;
 					
+					Main.game.save.world.addEntity(droppedItem);
+					
 				}
 	
 			}

@@ -35,13 +35,13 @@ public class Save {
 		game = Main.game;
 		
 		player = new PLAYER(world, new Vector2D(1, 1), 90);
-		
+		/*
 		for (int i = 0; i < 32; i++) {
 			
 			player.getInventory().addItem(new COLOUR_SQUARE(new Color(0, 0, i * 8)));
 			
 		}
-		
+		*/
 		vault = new ArrayList<Item>();
 		
 		initMenus();
