@@ -6,6 +6,7 @@ import me.Josh123likeme.LORBase.GameHolder.World;
 import me.Josh123likeme.LORBase.ItemHolder.Item;
 import me.Josh123likeme.LORBase.ItemHolder.ZOMBIE_FLESH;
 import me.Josh123likeme.LORBase.ParticleHolder.DAMAGE_NUMBER;
+import me.Josh123likeme.LORBase.ParticleHolder.INDICATOR;
 import me.Josh123likeme.LORBase.Types.Vector2D;
 import me.Josh123likeme.LORBase.Utils.AStar;
 
@@ -133,13 +134,24 @@ public class ZOMBIE extends Entity implements ISmart, ICollidable, IMoveable, IH
 			
 			Vector2D[] path = AStar.doAStar(world, pos, world.player.getPosition());
 			
-			for (Vector2D vector : path) {
+			for (int i = 0; i < path.length; i++) {
 				
-				world.addParticle(new DAMAGE_NUMBER(vector, 0));
+				Vector2D vec = path[i];
+				
+				vec.X += 0.5;
+				vec.Y += 0.5;
+				
+				path[i] = vec;
 				
 			}
 			
-			target = path[0];
+			for (Vector2D vector : path) {
+				
+				world.addParticle(new INDICATOR(vector));
+				
+			}
+			
+			target = path[1];
 			
 			break;
 			
