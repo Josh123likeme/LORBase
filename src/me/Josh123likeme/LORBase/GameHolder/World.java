@@ -204,6 +204,12 @@ public class World {
 			
 		}
 		
+		if (mouseWitness.isRightClicked()) {
+			
+			player.setPosition(mouseWorldPos);
+			
+		}
+		
 		//entity elimination
 		List<Entity> entitiesToRemove = new ArrayList<Entity>();
 		
