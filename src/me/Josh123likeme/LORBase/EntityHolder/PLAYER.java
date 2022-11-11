@@ -31,7 +31,7 @@ public class PLAYER extends Entity implements ICollidable, IMoveable, IHasInvent
 		
 	}
 	
-	public void updatePlayerWorld(World world) {
+	public void updatePlayerInstance(World world) {
 		
 		this.world = world;
 		

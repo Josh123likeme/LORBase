@@ -98,16 +98,39 @@ public abstract class Entity {
 	
 	public void setFacing(double facing) {
 		
+		facing %= 360;
+		
+		if (facing < 0) facing = 360 + facing;
+		
 		this.facing = facing;
 		
 	}
-	
-	public abstract double getSize();
-	
-	public double getDistance(double x, double y) {
+	/*
+	public boolean canSee(Vector2D target) {
 		
-		return Math.sqrt((pos.X - x) * (pos.X - x) + (pos.Y - y) * (pos.Y - y));
+		if (!(this instanceof ISmart)) throw new IllegalArgumentException("This entity cant see!");
+
+		if (pos.distanceTo(target) > ((ISmart) this).getViewDistance()) return false;
+		
+		Vector2D looking = new Vector2D(facing);
+		Vector2D direction = new Vector2D(target.X, target.Y).subtract(pos).normalise();
+
+		if (looking.angleBetween(direction) > ((ISmart) this).getFieldOfView()) return false;
+		
+		Vector2D current = pos.clone();
+		
+		while (current.distanceTo(target) > 0.5) {
+			
+			if (world.getWall((int) current.X, (int) current.Y) != Wall.AIR) return false;
+			
+			current.add(direction);
+			
+		}
+		
+		return true;
 		
 	}
+	*/
+	public abstract double getSize();
 	
 }

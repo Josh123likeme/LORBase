@@ -3,7 +3,9 @@ package me.Josh123likeme.LORBase.Utils;
 import java.util.*;
 
 import me.Josh123likeme.LORBase.BlockHolder.Wall;
+import me.Josh123likeme.LORBase.EntityHolder.Entity;
 import me.Josh123likeme.LORBase.GameHolder.World;
+import me.Josh123likeme.LORBase.ParticleHolder.DAMAGE_NUMBER;
 import me.Josh123likeme.LORBase.Types.Vector2D;
 
 public class AStar {
@@ -158,7 +160,7 @@ public class AStar {
 			
 		} while (parent != null);
 		
-		//flip path
+		//flip path to correct direction and convert to double
 		Vector2D[] flipped = new Vector2D[reversePath.size()];
 		
 		for (int i = 0; i < reversePath.size(); i++) {
@@ -169,7 +171,57 @@ public class AStar {
 			
 		}
 		
-		return flipped;
+		List<Vector2D> cornersAdded = new ArrayList<Vector2D>();
+	
+		cornersAdded.add(flipped[0]);
+		
+		//corner re-evaluation
+		for (int i = 1; i < flipped.length; i++) {
+			
+			Vector2D prev = flipped[i - 1];
+			Vector2D curr = flipped[i];
+			
+			if (prev.X != curr.X && prev.Y != curr.Y) {
+				
+				if (board.getBlockAt((int) prev.X, (int) curr.Y))  {
+					
+					cornersAdded.add(new Vector2D(curr.X, prev.Y));
+
+				}
+				if (board.getBlockAt((int) curr.X, (int) prev.Y))  {
+					
+					cornersAdded.add(new Vector2D(prev.X, curr.Y));
+					
+				}
+				
+			}
+			
+			cornersAdded.add(curr);
+			
+		}
+		
+		//convert to array
+		Vector2D[] asArray = new Vector2D[cornersAdded.size()];
+		
+		for (int i = 0; i < asArray.length; i++) {
+			
+			asArray[i] = cornersAdded.get(i);
+			
+		}
+		
+		//offset points
+		for (int i = 0; i < asArray.length; i++) {
+			
+			Vector2D vector = asArray[i];
+			
+			vector.X += 0.1;
+			vector.Y += 0.1;
+			
+			asArray[i] = vector;
+			
+		}
+		
+		return asArray;
 		
 	}
 	

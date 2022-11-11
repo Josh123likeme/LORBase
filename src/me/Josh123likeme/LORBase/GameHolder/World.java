@@ -228,7 +228,7 @@ public class World {
 			}
 			
 			if (entity instanceof ITEM_ENTITY && 
-					entity.getDistance(player.getPosition().X, player.getPosition().Y) < 1) {
+					entity.getPosition().distanceTo(player.getPosition().X, player.getPosition().Y) < 1) {
 				
 				if (!player.getInventory().isFull() && ((ITEM_ENTITY) entity).canPickup()) {
 					

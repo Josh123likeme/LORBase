@@ -6,4 +6,6 @@ public interface ISmart {
 	
 	public double getViewDistance();
 	
+	public double getFieldOfView();
+	
 }

@@ -64,7 +64,7 @@ public class Save {
 		
 		world = new World(this);
 		
-		player.updatePlayerWorld(world);
+		player.updatePlayerInstance(world);
 		
 	}
 	

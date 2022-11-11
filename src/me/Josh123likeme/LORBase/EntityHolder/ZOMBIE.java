@@ -14,8 +14,8 @@ public class ZOMBIE extends Entity implements ISmart, ICollidable, IMoveable, IH
 	
 	private double health;
 	
-	WanderState state;
-	Vector2D target;
+	BrainState state;
+	Vector2D[] path;
 	
 	private long nextAttackTime;
 	private final double attackCooldown = 1d;
@@ -25,8 +25,8 @@ public class ZOMBIE extends Entity implements ISmart, ICollidable, IMoveable, IH
 		
 		health = 100d;
 		
-		state = WanderState.WANDER;
-		target = pos.clone();
+		state = BrainState.WANDER;
+		path = new Vector2D[] {pos.clone()};
 		
 		nextAttackTime = System.nanoTime();
 		
@@ -42,6 +42,13 @@ public class ZOMBIE extends Entity implements ISmart, ICollidable, IMoveable, IH
 	public double getViewDistance() {
 		
 		return 10d;
+	}
+	
+	@Override
+	public double getFieldOfView() {
+		
+		return 120d;
+		
 	}
 	
 	@Override
@@ -93,10 +100,9 @@ public class ZOMBIE extends Entity implements ISmart, ICollidable, IMoveable, IH
 	@Override
 	public void updateBrain() {
 		
-		//update brain
-		if (pos.distanceTo(world.player.getPosition()) > getViewDistance()) state = WanderState.WANDER;
-		else if (pos.distanceTo(world.player.getPosition()) > 1) state = WanderState.CHASE;
-		else state = WanderState.ATTACK;
+		//update brain state
+		if (pos.distanceTo(world.player.getPosition()) < 2) state = BrainState.ATTACK;
+		else if (pos.distanceTo(world.player.getPosition()) < getViewDistance()) state = BrainState.CHASE;
 		
 		double angle = 0d;
 		Vector2D next = new Vector2D();
@@ -124,7 +130,7 @@ public class ZOMBIE extends Entity implements ISmart, ICollidable, IMoveable, IH
 					
 				}
 				
-				target = choice;
+				path = new Vector2D[] {choice};
 	
 			}	
 			
@@ -132,38 +138,45 @@ public class ZOMBIE extends Entity implements ISmart, ICollidable, IMoveable, IH
 			
 		case CHASE:
 			
-			Vector2D[] path = AStar.doAStar(world, pos, world.player.getPosition());
+			//chance to give up chasing
+			if (random.nextDouble() < Main.game.getDeltaFrame() / 5) state = BrainState.WANDER;
 			
-			for (int i = 0; i < path.length; i++) {
+			//temp for testing pathfinding quickly
+			Vector2D[] newPath = AStar.doAStar(world, pos, world.player.getPosition());
+			
+			//the pathfinding is significantly different, so we update it
+			if (path.length <= 1 || path[0].distanceTo(newPath[1]) > 0.1) {
 				
-				Vector2D vec = path[i];
-				
-				vec.X += 0.5;
-				vec.Y += 0.5;
-				
-				path[i] = vec;
+				path = newPath;
 				
 			}
-			
-			for (Vector2D vector : path) {
-				
-				world.addParticle(new INDICATOR(vector));
-				
-			}
-			
-			target = path[1];
 			
 			break;
 			
 		case ATTACK:
 		
-			target = world.player.getPosition();
+			path = new Vector2D[] {world.player.getPosition()};
 			
 			break;
 		
 		}	
 		
-		angle = pos.directionTo(target);
+		//progress along path
+		if (pos.distanceTo(path[0]) < 0.01 && path.length > 1) {
+			
+			Vector2D[] newPath = new Vector2D[path.length - 1];
+			
+			for (int i = 0; i < newPath.length; i++) {
+				
+				newPath[i] = path[i + 1];
+				
+			}
+			
+			path = newPath;
+			
+		}
+		
+		angle = pos.directionTo(path[0]);
 		
 		next = pos.clone();
 		next.X += Math.cos(Math.toRadians(angle)) * getMovementSpeed() * Main.game.getDeltaFrame();
@@ -172,7 +185,7 @@ public class ZOMBIE extends Entity implements ISmart, ICollidable, IMoveable, IH
 		facing = angle;
 		moveEntity(next, world);
 		
-		if (state == WanderState.ATTACK && pos.distanceTo(target) < 0.8 && System.nanoTime() > nextAttackTime) {
+		if (state == BrainState.ATTACK && pos.distanceTo(path[0]) < 0.8 && System.nanoTime() > nextAttackTime) {
 			
 			world.player.damage(random.nextDouble() * 10 + 15);
 			

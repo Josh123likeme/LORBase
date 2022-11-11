@@ -10,10 +10,23 @@ public class Vector2D implements Cloneable {
 	
 	public Vector2D() { }
 	
+	public Vector2D(double angle) {
+		
+		X = Math.cos(Math.toRadians(angle));
+		Y = Math.sin(Math.toRadians(angle));
+		
+	}
+	
 	public Vector2D(double x, double y) {
 		
 		X = x;
 		Y = y;
+		
+	}
+	
+	public double length() {
+		
+		return distanceTo(0, 0);
 		
 	}
 	
@@ -36,6 +49,12 @@ public class Vector2D implements Cloneable {
 		
 	}
 	
+	public double distanceTo(double x, double y) {
+		
+		return Math.sqrt((X - x) * (X - x) + (Y - y) * (Y - y));
+		
+	}
+	
 	public double directionTo(Vector2D vec) {
 		
 		double dx = vec.X - X;
@@ -52,6 +71,31 @@ public class Vector2D implements Cloneable {
 		if (dx == 0 && dy < 0) return 270;
 		
 		return 0d;
+		
+	}
+	
+	public double directionTo(double x, double y) {
+		
+		double dx = x - X;
+		double dy = x - Y;
+		
+		if (dx > 0 && dy > 0) return Math.toDegrees(Math.atan(dy / dx));
+		if (dx < 0 && dy > 0) return 90 + Math.toDegrees(Math.atan(-dx / dy));
+		if (dx < 0 && dy < 0) return 180 + Math.toDegrees(Math.atan(-dy / -dx));
+		if (dx > 0 && dy < 0) return 270 + Math.toDegrees(Math.atan(dx / -dy));
+		
+		if (dx > 0 && dy == 0) return 0;
+		if (dx == 0 && dy > 0) return 90;
+		if (dx < 0 && dy == 0) return 180;
+		if (dx == 0 && dy < 0) return 270;
+		
+		return 0d;
+		
+	}
+	
+	public double angleBetween(Vector2D vec) {
+		
+		return Math.toDegrees(Math.acos((dot(vec)) / (length() * vec.length())));
 		
 	}
 	
@@ -88,6 +132,12 @@ public class Vector2D implements Cloneable {
 		Y *= scale;
 		
 		return this;
+		
+	}
+	
+	public double dot(Vector2D vec) {
+		
+		return X * vec.X + Y * vec.Y;
 		
 	}
 	
