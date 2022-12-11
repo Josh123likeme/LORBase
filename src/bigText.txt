@@ -1,0 +1,6233 @@
+----------------------
+src\assets\Assets.java
+----------------------
+package assets;
+
+import java.awt.image.BufferedImage;
+import java.io.IOException;
+
+import javax.imageio.ImageIO;
+
+public abstract class Assets {
+
+	private static BufferedImage defaultTexture;
+	
+	public static BufferedImage LoadTextureFromAssets(String path){
+		
+		try {
+			
+			return ImageIO.read(Assets.class.getResourceAsStream(path));
+			
+		}
+		catch (IOException | IllegalArgumentException e) {
+			
+			System.out.println("couldn't find texture at " + path + "\nusing default texture instead");	
+			
+			if (defaultTexture == null) generateDefaultTexture();
+			
+			return defaultTexture;
+			
+		}
+		
+	}
+	
+	private static void generateDefaultTexture() {
+		
+		BufferedImage texture = new BufferedImage(2, 2, BufferedImage.TYPE_INT_ARGB);
+		
+		int col = (255 << 24) | (0 << 16) | (0 << 8) | 0;
+		texture.setRGB(0, 0, col);
+		texture.setRGB(1, 1, col);
+		
+		col = (255 << 24) | (170 << 16) | (45 << 8) | 170;
+		texture.setRGB(1, 0, col);
+		texture.setRGB(0, 1, col);
+		
+		defaultTexture = texture;
+		
+	}
+	
+}
+
+-------------------------------------------
+src\me\Josh123likeme\LORBase\DebugInfo.java
+-------------------------------------------
+package me.Josh123likeme.LORBase;
+
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.event.KeyEvent;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+
+import me.Josh123likeme.LORBase.InputListener.KeyboardWitness;
+import me.Josh123likeme.LORBase.InputListener.MouseWitness;
+
+public class DebugInfo {
+	
+	Game game;
+	
+	private HashMap<String, String> tasks = new HashMap<String, String>();
+	
+	public DebugInfo(Game game) {
+		
+		this.game = game;
+		
+	}
+	
+	public void addTask(String task) {
+		
+		if (tasks.keySet().contains(task)) throw new IllegalArgumentException("There is already a task running with that name");
+		
+		tasks.put(task, null);
+		
+	}
+	
+	public void addTask(String task, String progress) {
+		
+		if (tasks.keySet().contains(task)) throw new IllegalArgumentException("There is already a task running with that name");
+		
+		tasks.put(task, progress);
+		
+	}
+	
+	public void addOrUpdateTask(String task) {
+		
+		tasks.put(task, null);
+		
+	}
+	
+	public void addOrUpdateTask(String task, String progress) {
+		
+		tasks.put(task, progress);
+		
+	}
+	
+	public void updateTask(String task, String progress) {
+		
+		if (!tasks.keySet().contains(task)) throw new IllegalArgumentException("There is no task running with that name");
+		
+		tasks.put(task, progress);
+		
+	}
+	
+	public void removeTask(String task) {
+		
+		if (!tasks.containsKey(task)) throw new IllegalArgumentException("There is no task running with that name");
+		
+		tasks.remove(task);
+		
+	}
+	
+	public void render(Graphics g) {
+		
+		//debug info
+		
+		MouseWitness mouseWitness = game.mouseWitness;
+		KeyboardWitness keyboardWitness = game.keyboardWitness;
+		
+		List<String> lines = new ArrayList<String>();
+		
+		lines.add("Game State: " + game.getGameState());
+		lines.add("FPS: " + game.getFPS() + " (Delta Frame: " + game.getDeltaFrame() + ")");
+		
+		lines.add("Is Dragging: " + mouseWitness.isDragging());
+		
+		String keysPressed = "";
+		
+		//just in case a key is pressed during the loops runtime
+		try {
+			
+			for (int i = 0; i < keyboardWitness.getHeldKeys().size(); i++) {
+				
+				keysPressed += KeyEvent.getKeyText(keyboardWitness.getHeldKeys().get(i)) + "(" + keyboardWitness.getHeldKeys().get(i) + "), ";
+				
+			}
+			
+		} catch (IndexOutOfBoundsException e) { }
+		
+		lines.add("Keys pressed: " + keysPressed);
+		
+		if (game.save != null) {
+			
+			lines.add("Player Pos: (" + 
+				(double) Math.round(game.save.player.getPosition().X * 10000) / 10000 + ", " + 
+				(double) Math.round(game.save.player.getPosition().Y * 10000) / 10000 + ") Facing: " + 
+				game.save.player.getFacing());
+			
+		}
+		else lines.add("Player Pos: N/A");
+		
+		if (game.save != null && game.save.world != null) {
+			
+			lines.add("Camera Pos: (" + 
+				(double) Math.round(game.save.world.worldData.CameraPosition.X * 10000) / 10000 + ", " + 
+				(double) Math.round(game.save.world.worldData.CameraPosition.Y * 10000) / 10000 + ")");
+			
+		}
+		else lines.add("CameraPos: N/A");
+		
+		if (game.save != null && game.save.world != null) {
+			
+			lines.add("Zoom: " + (double) Math.round(Main.game.save.world.worldData.Zoom * 10000) / 10000);
+			
+		}
+		else lines.add("Zoom: N/A");
+		
+		FrameData frameData = Main.game.frameData;
+		
+		g.setColor(Color.white);
+		
+		g.setFont(new Font(g.getFont().getFontName(), Font.PLAIN, frameData.Height / 25)); 
+		
+		for (int i = 0; i < lines.size(); i++) {
+			
+			g.drawString(lines.get(i), frameData.Width / 100, (frameData.Height / 25) * (i + 1));
+			
+		}
+		
+		//tasks
+		
+		lines = new ArrayList<String>();
+		
+		for (String task : tasks.keySet()) {
+			
+			if (tasks.get(task) != null) lines.add(task + " (" + tasks.get(task) + ")");	
+			else lines.add(task);
+			
+		}
+		
+		g.drawString("Tasks:", frameData.Width - (frameData.Width / 100) - g.getFontMetrics().stringWidth("Tasks:"), (frameData.Height / 25));
+		
+		for (int i = 0; i < lines.size(); i++) {
+			
+			g.drawString(lines.get(i), frameData.Width - (frameData.Width / 100) - g.getFontMetrics().stringWidth(lines.get(i)), (frameData.Height / 25) * (i + 2));
+			
+		}
+		
+	}
+	
+}
+
+-------------------------------------------
+src\me\Josh123likeme\LORBase\FrameData.java
+-------------------------------------------
+package me.Josh123likeme.LORBase;
+
+public class FrameData {
+
+	public int Height;
+	public int Width;
+	public double DeltaFrame;
+	
+}
+
+--------------------------------------
+src\me\Josh123likeme\LORBase\Game.java
+--------------------------------------
+package me.Josh123likeme.LORBase;
+
+import java.awt.Canvas;
+import java.awt.Color;
+import java.awt.Graphics;
+import java.awt.image.BufferStrategy;
+
+import me.Josh123likeme.LORBase.GameHolder.Save;
+import me.Josh123likeme.LORBase.InputListener.ControlHolder.ButtonType;
+import me.Josh123likeme.LORBase.InputListener.KeyboardWitness;
+import me.Josh123likeme.LORBase.InputListener.MouseWitness;
+import me.Josh123likeme.LORBase.UI.Menu;
+
+public class Game extends Canvas implements Runnable {
+
+	private static final long serialVersionUID = 1L;
+
+	public static final int INITIAL_WIDTH = 400, INITIAL_HEIGHT = 400;
+	
+	@SuppressWarnings("unused")
+	private Window window;
+	private Thread thread;
+	private boolean running = false;
+	
+	public MouseWitness mouseWitness;
+	public KeyboardWitness keyboardWitness;
+	
+	public FrameData frameData;
+	public DebugInfo debugInfo;
+	private boolean displayDebugInfo = false;
+	
+	public Save save;
+	
+	private Menu mainMenu;
+	
+	private int fps = 0;
+	private double deltaFrame;
+	
+	private GameState gameState = GameState.START_UP;
+	
+	public Game() {
+		
+		window = new Window(INITIAL_WIDTH, INITIAL_HEIGHT, "The Labyrinth Of Recursion", this);
+		
+		debugInfo = new DebugInfo(this);
+		
+		frameData = new FrameData();
+		
+		initInputs();
+		
+		initMenus();
+		
+		gameState = GameState.MAIN_MENU;
+		
+	}
+	
+	public void initInputs() {
+		
+		mouseWitness = new MouseWitness();
+		keyboardWitness = new KeyboardWitness();
+		
+		addMouseListener(mouseWitness);
+		addMouseMotionListener(mouseWitness);
+		addKeyListener(keyboardWitness);
+		
+		requestFocus();
+		
+	}
+	
+	public synchronized void start() {
+		
+		thread = new Thread(this);
+		thread.start();
+		running = true;
+		
+	}
+	
+	public synchronized void stop() {
+		
+		try 
+		{
+			thread.join();
+			running = false;
+		}
+		
+		catch(Exception e) {
+			
+			e.printStackTrace();
+			
+		}
+		
+	}
+	
+	public void run() {
+
+		double targetfps = SettingsHolder.targetfps;
+		long targetDeltaFrame = Math.round((1d / targetfps) * 1000000000);
+		long lastSecond = System.nanoTime();
+		int frames = 0;
+		
+		long lastFrame = 0;
+		
+		updateFrameData();
+		
+		frameData.DeltaFrame = targetDeltaFrame;
+		
+		while (running) {
+			
+			frames++;
+			
+			if (lastSecond + 1000000000 < System.nanoTime()) {
+				
+				fps = frames;
+				
+				frames = 0;
+				
+				lastSecond = System.nanoTime();
+				
+				targetfps = SettingsHolder.targetfps;
+				targetDeltaFrame = Math.round((1d / targetfps) * 1000000000);
+				
+				if (gameState == GameState.IN_GAME) save.updateInfrequent();
+				
+			}
+			
+			//starting to push frame
+			
+			long nextTime = System.nanoTime() + targetDeltaFrame;
+			
+			if (gameState == GameState.IN_GAME) {
+				
+				save.update();
+				
+				if (!save.running) {
+					
+					closeSave();
+					
+				}
+				
+			}
+			
+			deltaFrame = ((double) (System.nanoTime() - lastFrame)) / 1000000000;
+			frameData.DeltaFrame = deltaFrame;
+			
+			
+			updateFrameData();
+			
+			lastFrame = System.nanoTime();
+			
+			preFrame();
+			
+			paint();
+			
+			keyboardWitness.purgeTypedKeys();
+			mouseWitness.purgeClickedButtons();
+			
+			//finished pushing frame
+			
+			while (nextTime > System.nanoTime());
+			
+		}
+		stop();
+		
+	}
+
+	private void paint() {
+	
+		BufferStrategy bufferStrategy = this.getBufferStrategy();
+		if(bufferStrategy == null) {
+			this.createBufferStrategy(3);
+			return;
+		}
+		Graphics g = bufferStrategy.getDrawGraphics();
+		
+		//basic black background to stop flashing
+		g.setColor(Color.black); 
+		g.fillRect(0, 0, getWidth(), getHeight());
+		
+		//put rendering stuff here
+		
+		if (gameState == GameState.IN_GAME) save.render(g);	
+		
+		if (gameState == GameState.MAIN_MENU) mainMenu.render(g);
+		
+		if (displayDebugInfo) debugInfo.render(g);
+		
+		//this pushes the graphics to the window
+		bufferStrategy.show();
+		
+	}
+	
+	private void preFrame() {
+		
+		//menu interaction
+		
+		if (gameState == GameState.MAIN_MENU) {
+		
+			if (mouseWitness.isLeftClicked()) {
+				
+				if (mainMenu.getButtonAt(mouseWitness.getMouseX(), mouseWitness.getMouseY()) == "START_GAME") {
+					
+					startSave();
+					
+				}
+				
+				if (mainMenu.getButtonAt(mouseWitness.getMouseX(), mouseWitness.getMouseY()) == "EXIT") {
+					
+					running = false;
+					
+				}
+				
+			}
+			
+		}
+		
+		//toggle checks
+		
+		if (gameState == GameState.IN_GAME) {
+			
+			if (keyboardWitness.isButtonTyped(ButtonType.PAUSE) && save != null) save.gamePaused = !save.gamePaused;
+			
+		}
+		
+		if (keyboardWitness.isButtonTyped(ButtonType.DEBUG_TOGGLE)) displayDebugInfo = !displayDebugInfo;
+		
+		//temp zoom
+		
+		if (save != null && save.world != null) {
+			
+			if (keyboardWitness.isButtonHeld(ButtonType.ZOOM_IN)) save.world.worldData.Zoom += 0.01;
+			if (keyboardWitness.isButtonHeld(ButtonType.ZOOM_OUT)) save.world.worldData.Zoom -= 0.01;
+		}
+		
+	}
+	
+	public boolean isDebugInfoDisplayed() {
+		
+		return displayDebugInfo;
+		
+	}
+	
+	private void updateFrameData() {
+		
+		frameData.Width = getWidth();
+		frameData.Height = getHeight();
+	
+		
+	}
+	
+	private void startSave() {
+
+		save = new Save();
+		
+		gameState = GameState.IN_GAME;
+		
+	}
+	
+	private void closeSave() {
+		
+		save = null;
+		
+		gameState = GameState.MAIN_MENU;
+		
+	}
+	
+	private void initMenus() {
+		
+		mainMenu = new Menu();
+		mainMenu.createElement("TITLE", "LABYRINTH OF RECURSION", 0.2, 0.05, 0.6, 0.2);
+		mainMenu.createButton("START_GAME", "Start Game", 0.25, 0.3, 0.2, 0.2);
+		//mainMenu.createButton("SETTINGS", "Settings", 0.55, 0.3, 0.2, 0.2);
+		//mainMenu.createButton("EXIT", "Quit Game", "THERE IS NO ESCAPE", 0.55, 0.6, 0.2, 0.2);
+		mainMenu.createButton("EXIT", "Quit Game", "The game will close", 0.55, 0.3, 0.2, 0.2);
+		/*
+		settingsMenu = new Menu();
+		settingsMenu.createButton("TARGET_FPS", "Target Fps", 0.05, 0.05, 0.1, 0.1);
+		settingsMenu.createButton("BLOCK_PIXEL_SIZE", "Block Pixel Size", 0.2, 0.2, 0.1, 0.1);
+		settingsMenu.createButton("ZOOM", "Zoom", 0.35, 0.35, 0.1, 0.1);
+		*/
+	}
+	
+	public int getFPS() {
+		
+		return fps;
+		
+	}
+	
+	public double getDeltaFrame() {
+		
+		return deltaFrame;
+		
+	}
+	
+	public GameState getGameState() {
+		
+		return gameState;
+		
+	}
+	
+	public enum GameState {
+		
+		START_UP,
+		MAIN_MENU,
+		IN_GAME,
+		
+		;
+		
+	}
+	
+}
+
+--------------------------------------
+src\me\Josh123likeme\LORBase\Main.java
+--------------------------------------
+package me.Josh123likeme.LORBase;
+
+public class Main {
+
+	public static Game game;
+	
+	public static void main(String[] args) {
+		
+		ResourceLoader.loadResources();
+		
+		game = new Game();
+		
+		game.start();
+		
+	}
+	
+}
+
+------------------------------------------------
+src\me\Josh123likeme\LORBase\ResourceLoader.java
+------------------------------------------------
+package me.Josh123likeme.LORBase;
+
+import java.awt.Graphics2D;
+import java.awt.geom.AffineTransform;
+import java.awt.image.BufferedImage;
+import java.awt.image.DataBufferByte;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+
+import me.Josh123likeme.LORBase.BlockHolder.Floor;
+import me.Josh123likeme.LORBase.BlockHolder.Wall;
+import me.Josh123likeme.LORBase.InputListener.ControlHolder;
+
+public abstract class ResourceLoader {
+
+	private static HashMap<Floor, BufferedImage> floorTextures = new HashMap<Floor, BufferedImage>();
+	private static HashMap<Wall, BufferedImage> wallTextures = new HashMap<Wall, BufferedImage>();
+	
+	public static void loadResources() {
+		
+		floorTextures = Floor.loadTextures();
+		wallTextures = Wall.loadTextures();
+		
+		ControlHolder.loadBinds();
+		SettingsHolder.loadSettings();
+		
+	}
+	
+	public static BufferedImage getTexture(Floor floor) {
+		
+		return floorTextures.get(floor);
+		
+	}
+	
+	public static BufferedImage getTexture(Wall wall) {
+		
+		return wallTextures.get(wall);
+		
+	}
+	
+	public static BufferedImage copyImage(BufferedImage source){
+		
+		//courtesy of clic on stack overflow
+		
+	    BufferedImage bi = new BufferedImage(source.getWidth(), source.getHeight(), source.getType());
+	    byte[] sourceData = ((DataBufferByte)source.getRaster().getDataBuffer()).getData();
+	    byte[] biData = ((DataBufferByte)bi.getRaster().getDataBuffer()).getData();
+	    System.arraycopy(sourceData, 0, biData, 0, sourceData.length);
+	    return bi;
+	}
+	
+	public static BufferedImage rotateImageByDegrees(BufferedImage source, double angle) {
+		
+		//courtesy of MadProgrammer on stack overflow
+		
+		angle += 90;
+		
+		double rads = Math.toRadians(angle);
+	    double sin = Math.abs(Math.sin(rads)), cos = Math.abs(Math.cos(rads));
+	    int w = source.getWidth();
+	    int h = source.getHeight();
+	    int newWidth = (int) Math.floor(w * cos + h * sin);
+	    int newHeight = (int) Math.floor(h * cos + w * sin);
+
+	    BufferedImage rotated = new BufferedImage(newWidth, newHeight, BufferedImage.TYPE_INT_ARGB);
+	    Graphics2D g2d = rotated.createGraphics();
+	    AffineTransform at = new AffineTransform();
+	    at.translate((newWidth - w) / 2, (newHeight - h) / 2);
+
+	    int x = w / 2;
+	    int y = h / 2;
+
+	    at.rotate(rads, x, y);
+	    g2d.setTransform(at);
+	    g2d.drawImage(source, 0, 0, null);
+	    g2d.dispose();
+
+	    return rotated;
+		
+	}
+	
+	public static List<String> readFromTextFile(String path) throws IOException {
+		
+		List<String> lines = new ArrayList<String>();
+		
+		File file = new File(path);
+			
+        FileReader reader = new FileReader(file);
+        BufferedReader bufferedReader = new BufferedReader(reader);
+            
+        String line;
+ 
+        while ((line = bufferedReader.readLine()) != null) {
+        	
+        	lines.add(line);
+        	
+        }
+
+        reader.close();
+
+		return lines;
+		
+	}
+	
+	public static void writeToTextFile(String path, List<String> data) {
+		
+		File file = new File(path);
+		
+		if (!file.exists()) {
+			
+			File directoryCreation = new File(path.substring(0, path.lastIndexOf("\\")));
+			
+			directoryCreation.mkdirs();
+			
+		}
+		
+    	try {
+    		
+			file.createNewFile();
+			
+			FileWriter writer = new FileWriter(path);
+
+			for (String line : data) {
+				
+				writer.write(line + "\n");
+				
+			}
+			
+			writer.close();
+			
+		} catch (IOException e1) {
+			
+			System.out.println("uh oh. Couldn't create a config file");
+			
+			e1.printStackTrace();
+			
+		}
+		
+	}
+	
+}
+
+------------------------------------------------
+src\me\Josh123likeme\LORBase\SettingsHolder.java
+------------------------------------------------
+package me.Josh123likeme.LORBase;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+public abstract class SettingsHolder {
+
+	public static double targetfps;
+	public static final double defaultTargetfps = 10000;
+	
+	public static int blockPixelSize;
+	public static final int defaultBlockPixelSize = 16;
+	
+	public static double zoom;
+	public static final double defaultZoom = 5d;
+	
+	public static double descriptionSize;
+	public static final double defaultDescriptionSize = 0.025d;
+	
+	public static void loadSettings() {
+		
+		List<String> lines = null;
+		
+		try {
+			
+			lines = ResourceLoader.readFromTextFile("data\\settings\\settings.txt");
+			
+		} catch (IOException e) {};
+		
+		targetfps = defaultTargetfps;
+		blockPixelSize = defaultBlockPixelSize;
+		zoom = defaultZoom;
+		descriptionSize = defaultDescriptionSize;
+		
+		if (lines != null) {
+			
+			for (String line : lines) {
+				
+				if (line.split("=").length != 2) continue;
+				
+				String operand = line.split("=")[1];
+				
+				switch (line.split("=")[0]) {
+				
+					case "TARGET_FPS":
+						targetfps = Double.parseDouble(operand);
+						break;
+						
+					case "BLOCK_PIXEL_SIZE":
+						blockPixelSize = Integer.parseInt(operand);
+						break;
+				
+					case "ZOOM":
+						zoom = Double.parseDouble(operand);
+						break;
+						
+					case "DESCRPTION_SIZE":
+						descriptionSize = Double.parseDouble(operand);
+						break;
+						
+				}
+				
+			}
+			
+		}
+
+		saveSettings();
+		
+	}
+	
+	public static void saveSettings() {
+		
+		List<String> lines = new ArrayList<String>();
+		
+		lines.add("TARGET_FPS=" + targetfps);
+		lines.add("BLOCK_PIXEL_SIZE=" + blockPixelSize);
+		lines.add("ZOOM=" + zoom);
+		lines.add("DESCRIPTION_SIZE=" + descriptionSize);
+		
+		ResourceLoader.writeToTextFile("data\\settings\\settings.txt", lines);
+		
+	}
+	
+}
+--------------------------------------
+src\me\Josh123likeme\LORBase\TUID.java
+--------------------------------------
+package me.Josh123likeme.LORBase;
+
+import java.util.Random;
+
+public abstract class TUID {
+
+	private static Random random = new Random();
+	
+	public static String generateRandomTimeStampedId() {
+		
+		String timestamp = String.format("%16s", Long.toHexString(System.currentTimeMillis())).replace(' ', '0');
+		
+		String id = "";
+		
+		for (int i = 0; i < 16; i++) {
+			
+			id += Long.toHexString(random.nextInt(16));
+			
+		}
+		
+		return timestamp + id;
+		
+	}
+	
+}
+
+----------------------------------------
+src\me\Josh123likeme\LORBase\Window.java
+----------------------------------------
+package me.Josh123likeme.LORBase;
+
+import java.awt.Canvas;
+import java.awt.Dimension;
+
+import javax.swing.JFrame;
+
+
+public class Window extends Canvas {
+
+	private static final long serialVersionUID = -259832267823304864L;
+	
+	public Window(int width, int height, String title, Game game) {
+		
+		JFrame frame = new JFrame(title);
+		
+		frame.setPreferredSize(new Dimension(width, height));
+		frame.setMaximumSize(new Dimension(width, height));
+		frame.setMinimumSize(new Dimension(0, 0));	
+		frame.setSize(width, height);
+		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		frame.setResizable(true);
+		frame.setLocationRelativeTo(null);
+		frame.setVisible(true);
+		frame.add(game);	
+		
+	}
+	
+}
+
+-------------------------------------------
+src\me\Josh123likeme\LORBase\WorldData.java
+-------------------------------------------
+package me.Josh123likeme.LORBase;
+
+import me.Josh123likeme.LORBase.Types.Vector2D;
+
+public class WorldData {
+
+	public Vector2D CameraPosition;
+	
+	public boolean FocusPlayer;
+	
+	public double Zoom;
+	
+}
+
+---------------------------------------------------
+src\me\Josh123likeme\LORBase\BlockHolder\Floor.java
+---------------------------------------------------
+package me.Josh123likeme.LORBase.BlockHolder;
+
+import java.awt.image.BufferedImage;
+import java.util.HashMap;
+
+import me.Josh123likeme.LORBase.ResourceLoader;
+import assets.Assets;
+
+public enum Floor {
+
+	LABYRINTH_FLOOR("LABYRINTH_FLOOR.png"),
+	
+	MOGUS("MOGUS.png"), //for testing high res textures
+	DEBUG_16("DEBUG_16.png"),
+	DEBUG_32("DEBUG_32.png"),
+	DEBUG_64("DEBUG_64.png"),
+	
+	;
+	
+	String texturePath;
+	
+	Floor(String texturePath){
+		
+		this.texturePath = texturePath;
+		
+	}
+	
+	public static HashMap<Floor, BufferedImage> loadTextures() {
+		
+		HashMap<Floor, BufferedImage> textures = new HashMap<Floor, BufferedImage>();
+		
+		for (int i = 0; i < Floor.values().length; i++) {
+			
+			BufferedImage image = null;
+				
+		    image = Assets.LoadTextureFromAssets("textures/block/" + Floor.values()[i].texturePath);
+			
+			textures.put(Floor.values()[i], image);
+			
+		}
+		
+		return textures;
+		
+	}
+	
+	public BufferedImage getTexture() {
+		
+		return ResourceLoader.getTexture(this);
+		
+	}
+	
+}
+
+--------------------------------------------------
+src\me\Josh123likeme\LORBase\BlockHolder\Wall.java
+--------------------------------------------------
+package me.Josh123likeme.LORBase.BlockHolder;
+
+import java.awt.image.BufferedImage;
+import java.util.HashMap;
+
+import me.Josh123likeme.LORBase.ResourceLoader;
+import assets.Assets;
+
+public enum Wall {
+
+	LABYRINTH_WALL("LABYRINTH_WALL.png"),
+	
+	STATUE_PODIUM("STATUE_PODIUM.png"),
+	
+	AIR("AIR.png");
+	
+	;
+	
+	String texturePath;
+	
+	Wall(String texturePath){
+		
+		this.texturePath = texturePath;
+		
+	}
+	
+	public static HashMap<Wall, BufferedImage> loadTextures() {
+		
+		HashMap<Wall, BufferedImage> textures = new HashMap<Wall, BufferedImage>();
+		
+		for (int i = 0; i < Wall.values().length; i++) {
+			
+			BufferedImage image = null;
+			
+			image = Assets.LoadTextureFromAssets("textures/block/" + Wall.values()[i].texturePath);
+			
+			textures.put(Wall.values()[i], image);
+			
+		}
+		
+		return textures;
+		
+	}
+	
+	public BufferedImage getTexture() {
+		
+		return ResourceLoader.getTexture(this);
+		
+	}
+	
+}
+
+---------------------------------------------------------
+src\me\Josh123likeme\LORBase\EntityHolder\BrainState.java
+---------------------------------------------------------
+package me.Josh123likeme.LORBase.EntityHolder;
+
+public enum BrainState {
+
+	WANDER,
+	CHASE,
+	ATTACK,
+	
+	;
+	
+}
+
+-----------------------------------------------------
+src\me\Josh123likeme\LORBase\EntityHolder\Entity.java
+-----------------------------------------------------
+package me.Josh123likeme.LORBase.EntityHolder;
+
+import java.awt.image.BufferedImage;
+import java.util.Random;
+
+import me.Josh123likeme.LORBase.BlockHolder.Wall;
+import me.Josh123likeme.LORBase.GameHolder.World;
+import me.Josh123likeme.LORBase.ParticleHolder.INDICATOR;
+import me.Josh123likeme.LORBase.Types.Vector2D;
+import me.Josh123likeme.LORBase.Utils.AStar;
+import me.Josh123likeme.LORBase.Main;
+import assets.Assets;
+
+public abstract class Entity {
+	
+	protected static Random random = new Random();
+	
+	protected World world;
+	
+	protected Vector2D pos;
+	protected double facing;
+	
+	protected BrainState state = BrainState.WANDER;
+	private Vector2D[] path;
+	private long lastPathfindingUpdateTime = 0L;
+	private static final long pathfindingUpdatePeriod = 100000000L; //a tenth of a second
+
+	protected BufferedImage defaultTexture;
+	
+	public Entity(World world, Vector2D pos, double facing) {
+		
+		this.world = world;
+		this.pos = pos;
+		this.facing = facing;
+		
+		path = new Vector2D[] {pos};
+		
+	}
+	
+	/**
+	 * override this to give conditional textures
+	 * @return
+	 */
+	public BufferedImage getTexture() {
+		
+		if (defaultTexture == null) loadTextures();
+		
+		return defaultTexture;
+		
+	}
+	
+	/**
+	 * override this to load textures
+	 */
+	protected void loadTextures() {
+		
+		 defaultTexture = Assets.LoadTextureFromAssets("textures/entity/" + this.getClass().getSimpleName() + ".png");
+		
+	}
+	
+	public void update(World world) {
+		
+		if (this instanceof ISleep && ((ISleep) this).isSleeping()) return;
+		
+		if (this instanceof IChase) {
+			
+			updatePathfinding();
+			
+		}
+		if (this instanceof IAttack) {
+			
+			((IAttack) this).tryAttack();
+			
+		}
+		
+	}
+	
+	private void updatePathfinding() {
+		
+		IChase entity = (IChase) this;
+		
+		//update brain state
+		if (this instanceof ICollidable) {
+			
+			if (pos.distanceTo(world.player.getPosition()) < 1) state = BrainState.ATTACK;
+			else if (pos.distanceTo(world.player.getPosition()) < entity.getViewDistance()) state = BrainState.CHASE;
+			else state = BrainState.WANDER;
+			
+		}
+		else {
+			
+			if (pos.distanceTo(world.player.getPosition()) < entity.getViewDistance()) state = BrainState.ATTACK;
+			else state = BrainState.WANDER;
+			
+		}
+		
+		
+		
+		double angle = 0d;
+		Vector2D next = new Vector2D();
+		
+		switch (state) {
+		
+		case WANDER:
+			
+			//choose new target
+			if (random.nextDouble() < Main.game.getDeltaFrame() / 5) {
+				
+				Vector2D choice = new Vector2D();
+				
+				while (true) {
+					
+					choice.X = pos.X + random.nextInt(10) - 5;
+					choice.Y = pos.Y + random.nextInt(10) - 5;
+					
+					if (choice.X < 0 || choice.X >= world.getWidth()) continue;
+					if (choice.Y < 0 || choice.Y >= world.getHeight()) continue;
+					
+					if (world.getWall((int) choice.X, (int) choice.Y) != Wall.AIR) continue;
+					
+					break;
+					
+				}
+				
+				path = new Vector2D[] {choice};
+	
+			}	
+			
+			break;
+			
+		case CHASE:
+			
+			//restricts the frequency of re-calculations
+			if (System.nanoTime() > lastPathfindingUpdateTime + pathfindingUpdatePeriod) {
+				
+				lastPathfindingUpdateTime = System.nanoTime();
+				
+				Vector2D[] newPath = AStar.doAStar(world, this, world.player);
+				
+				//the target is unreachable
+				if (newPath == null) break;
+				
+				//the pathfinding is significantly different, so we update it
+				if (path[0].distanceTo(newPath[1]) > 0.1) {
+					
+					path = newPath;
+					
+				}
+				
+			}
+			
+			break;
+			
+		case ATTACK:
+		
+			path = new Vector2D[] {world.player.getPosition()};
+			
+			break;
+		
+		}	
+		
+		//progress along path
+		if (pos.distanceTo(path[0]) < 0.01 && path.length > 1) {
+			
+			Vector2D[] newPath = new Vector2D[path.length - 1];
+			
+			for (int i = 0; i < newPath.length; i++) {
+				
+				newPath[i] = path[i + 1];
+				
+			}
+			
+			path = newPath;
+			
+		}
+		
+		//path visualisation
+		if (Main.game.isDebugInfoDisplayed()) {
+			
+			for (int i = 0; i < path.length; i++) {
+				
+				world.addParticle(new INDICATOR(path[i]));
+				
+			}
+			
+		}
+		
+		angle = pos.directionTo(path[0]);
+		
+		next = pos.clone();
+		next.X += Math.cos(Math.toRadians(angle)) * ((IMoveable) entity).getMovementSpeed() * Main.game.getDeltaFrame();
+		next.Y += Math.sin(Math.toRadians(angle)) * ((IMoveable) entity).getMovementSpeed() * Main.game.getDeltaFrame();
+		
+		facing = angle;
+		if (!(path.length == 1 && pos.distanceTo(path[0]) < 0.1)) moveEntity(next, world);
+		
+	}
+	
+	public void moveEntity(Vector2D pos, World world) {
+		
+		if (this instanceof ICollidable) {
+			
+			if (world.getWall((int) pos.X, (int) pos.Y) != Wall.AIR) return;
+			if (world.getWall((int) (pos.X + getSize()), (int) pos.Y) != Wall.AIR) return;
+			if (world.getWall((int) pos.X, (int) (pos.Y + getSize())) != Wall.AIR) return;
+			if (world.getWall((int) (pos.X + getSize()), (int) (pos.Y + getSize())) != Wall.AIR) return;
+			
+		}
+		
+		this.pos = pos;
+		
+	}
+	
+	public Vector2D getPosition() {
+		
+		return pos;
+		
+	}
+	
+	public void setPosition(Vector2D position) {
+		
+		pos = position.clone();
+		
+	}
+	
+	public double getFacing() {
+		
+		return facing;
+		
+	}
+	
+	public void setFacing(double facing) {
+		
+		facing %= 360;
+		
+		if (facing < 0) facing = 360 + facing;
+		
+		this.facing = facing;
+		
+	}
+	/*
+	public boolean canSee(Vector2D target) {
+		
+		if (!(this instanceof ISmart)) throw new IllegalArgumentException("This entity cant see!");
+
+		if (pos.distanceTo(target) > ((ISmart) this).getViewDistance()) return false;
+		
+		Vector2D looking = new Vector2D(facing);
+		Vector2D direction = new Vector2D(target.X, target.Y).subtract(pos).normalise();
+
+		if (looking.angleBetween(direction) > ((ISmart) this).getFieldOfView()) return false;
+		
+		Vector2D current = pos.clone();
+		
+		while (current.distanceTo(target) > 0.5) {
+			
+			if (world.getWall((int) current.X, (int) current.Y) != Wall.AIR) return false;
+			
+			current.add(direction);
+			
+		}
+		
+		return true;
+		
+	}
+	*/
+	public abstract double getSize();
+	
+}
+
+-------------------------------------------------------
+src\me\Josh123likeme\LORBase\EntityHolder\GARGOYLE.java
+-------------------------------------------------------
+package me.Josh123likeme.LORBase.EntityHolder;
+
+import java.awt.image.BufferedImage;
+
+import assets.Assets;
+import me.Josh123likeme.LORBase.GameHolder.World;
+import me.Josh123likeme.LORBase.ItemHolder.Item;
+import me.Josh123likeme.LORBase.ItemHolder.TELEPORTATION_CORE;
+import me.Josh123likeme.LORBase.ParticleHolder.DAMAGE_NUMBER;
+import me.Josh123likeme.LORBase.Types.Vector2D;
+
+public class GARGOYLE extends Entity implements IAttack, IChase, IMoveable, IHealthy, ISleep {
+
+	private int level;
+	
+	private double health;
+	private double maxHealth;
+	
+	private long nextAttackTime;
+	private final double attackCooldown = 0.5d;
+	
+	private boolean sleeping = true;
+	private static BufferedImage sleepingTexture;
+	
+	public GARGOYLE(World world, Vector2D pos, double facing, int level) {
+		super(world, pos, facing);
+		
+		this.level = level;
+		
+		maxHealth = 200 * level;
+		health = maxHealth;
+		
+	}
+	
+	@Override
+	public BufferedImage getTexture() {
+		
+		if (defaultTexture == null) loadTextures();
+		
+		if (sleeping) return sleepingTexture;
+		
+		return defaultTexture;
+		
+	}
+	
+	@Override
+	protected void loadTextures() {
+		
+		 defaultTexture = Assets.LoadTextureFromAssets(
+				 "textures/entity/" + this.getClass().getSimpleName() + ".png");
+		 sleepingTexture = Assets.LoadTextureFromAssets(
+				 "textures/entity/" + this.getClass().getSimpleName() + "_SLEEPING" + ".png");
+		 
+	}
+
+	@Override
+	public double getHealth() {
+		// TODO Auto-generated method stub
+		return health;
+	}
+
+	@Override
+	public double getMaxHealth() {
+		// TODO Auto-generated method stub
+		return maxHealth;
+	}
+
+	@Override
+	public void updateStats() {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void damage(double damage) {
+		
+		sleeping = false;
+		
+		health -= damage;
+		
+		Vector2D particlePos = this.pos.clone();
+		
+		particlePos.fluctuate(getSize());
+		
+		world.addParticle(new DAMAGE_NUMBER(particlePos, damage));
+		
+	}
+
+	@Override
+	public void kill() {
+		// TODO Auto-generated method stub
+		
+		if (random.nextDouble() < 0.9d) {
+			
+			Item drop = new TELEPORTATION_CORE();
+			
+			world.addEntity(new ITEM_ENTITY(world, pos, 270, drop, 0.2d));
+			
+		}
+			
+	}
+
+	@Override
+	public double getMovementSpeed() {
+		// TODO Auto-generated method stub
+		return 4;
+	}
+
+	@Override
+	public double getViewDistance() {
+		// TODO Auto-generated method stub
+		return 20;
+	}
+
+	@Override
+	public double getFieldOfView() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	@Override
+	public void tryAttack() {
+		
+		double reach = 2d;
+		
+		if (state == BrainState.ATTACK && pos.distanceTo(world.player.getPosition()) < reach && System.nanoTime() > nextAttackTime) {
+			
+			world.player.damage(random.nextDouble() * 10 * level + 10 * level);
+			
+			nextAttackTime = (long) (System.nanoTime() + attackCooldown * 1000000000);
+			
+		}
+		
+	}
+
+	@Override
+	public double getSize() {
+		// TODO Auto-generated method stub
+		return 0.8d;
+	}
+
+	@Override
+	public boolean isSleeping() {
+		
+		return sleeping;
+		
+	}
+
+}
+
+------------------------------------------------------
+src\me\Josh123likeme\LORBase\EntityHolder\IAttack.java
+------------------------------------------------------
+package me.Josh123likeme.LORBase.EntityHolder;
+
+public interface IAttack {
+
+	public void tryAttack();
+	
+}
+
+-----------------------------------------------------
+src\me\Josh123likeme\LORBase\EntityHolder\IChase.java
+-----------------------------------------------------
+package me.Josh123likeme.LORBase.EntityHolder;
+
+public interface IChase {
+	
+	public double getViewDistance();
+	
+	public double getFieldOfView();
+	
+}
+
+----------------------------------------------------------
+src\me\Josh123likeme\LORBase\EntityHolder\ICollidable.java
+----------------------------------------------------------
+package me.Josh123likeme.LORBase.EntityHolder;
+
+public interface ICollidable {
+	
+}
+
+------------------------------------------------------------
+src\me\Josh123likeme\LORBase\EntityHolder\IHasInventory.java
+------------------------------------------------------------
+package me.Josh123likeme.LORBase.EntityHolder;
+
+import me.Josh123likeme.LORBase.ItemHolder.Inventory;
+
+public interface IHasInventory {
+
+	public Inventory getInventory();
+	
+}
+
+-------------------------------------------------------
+src\me\Josh123likeme\LORBase\EntityHolder\IHealthy.java
+-------------------------------------------------------
+package me.Josh123likeme.LORBase.EntityHolder;
+
+public interface IHealthy {
+
+	public double getHealth();
+	
+	public double getMaxHealth();
+	
+	public void updateStats();
+	
+	public void damage(double damage);
+	
+	public void kill();
+	
+}
+
+--------------------------------------------------------
+src\me\Josh123likeme\LORBase\EntityHolder\IMoveable.java
+--------------------------------------------------------
+package me.Josh123likeme.LORBase.EntityHolder;
+
+
+public interface IMoveable {
+
+	public double getMovementSpeed();
+	
+}
+
+-----------------------------------------------------
+src\me\Josh123likeme\LORBase\EntityHolder\ISleep.java
+-----------------------------------------------------
+package me.Josh123likeme.LORBase.EntityHolder;
+
+public interface ISleep {
+
+	public boolean isSleeping();
+	
+}
+
+----------------------------------------------------------
+src\me\Josh123likeme\LORBase\EntityHolder\ITEM_ENTITY.java
+----------------------------------------------------------
+package me.Josh123likeme.LORBase.EntityHolder;
+
+import java.awt.image.BufferedImage;
+
+import me.Josh123likeme.LORBase.GameHolder.World;
+import me.Josh123likeme.LORBase.ItemHolder.Item;
+import me.Josh123likeme.LORBase.Types.Vector2D;
+
+public class ITEM_ENTITY extends Entity {
+
+	private Item item;
+	private long droppedTime;
+	private final double pickupCooldown;
+	
+	public ITEM_ENTITY(World world, Vector2D initPos, double facing, Item item, double pickupCooldown) {
+		super(world, initPos, facing);
+		
+		this.item = item;
+		this.droppedTime = System.nanoTime();
+		this.pickupCooldown = pickupCooldown;
+		
+	}
+	
+	public BufferedImage getTexture() {
+		
+		return item.getTexture();
+		
+	}
+	
+	public Item getItem() {
+		
+		return item;
+		
+	}
+	
+	public boolean canPickup() {
+		
+		return (System.nanoTime() - droppedTime > pickupCooldown * 1000000000) ? true : false;
+		
+	}
+
+	@Override
+	public double getSize() {
+		
+		return 0.5d;
+	}
+	
+}
+
+-----------------------------------------------------
+src\me\Josh123likeme\LORBase\EntityHolder\PLAYER.java
+-----------------------------------------------------
+package me.Josh123likeme.LORBase.EntityHolder;
+
+import me.Josh123likeme.LORBase.Main;
+import me.Josh123likeme.LORBase.GameHolder.World;
+import me.Josh123likeme.LORBase.ItemHolder.Inventory;
+import me.Josh123likeme.LORBase.ParticleHolder.DAMAGE_NUMBER;
+import me.Josh123likeme.LORBase.Types.Vector2D;
+
+public class PLAYER extends Entity implements ICollidable, IMoveable, IHasInventory, IHealthy {
+	
+	private double health;
+	private double maxHealth;
+	
+	private double mana;
+	private double maxMana;
+	
+	private double healingRate = 0.01d;
+	
+	private Inventory inventory;
+	
+	public PLAYER(World world, Vector2D initPos, double facing) {
+		super(world, initPos, facing);
+		
+		maxHealth = 1000d;
+		health = maxHealth;
+		
+		maxMana = 100d;
+		mana = maxMana;
+		
+		inventory = new Inventory(8, 4);
+		
+	}
+	
+	public void updatePlayerInstance(World world) {
+		
+		this.world = world;
+		
+	}
+
+	@Override
+	public double getMovementSpeed() {
+		
+		return 5d;
+		
+	}
+
+	@Override
+	public Inventory getInventory() {
+		
+		return inventory;
+		
+	}
+
+	@Override
+	public double getHealth() {
+		
+		return health;
+	}
+
+	@Override
+	public double getMaxHealth() {
+		
+		return maxHealth;
+	}
+	
+	public double getMana() {
+		
+		return mana;
+	}
+
+	public double getMaxMana() {
+		
+		return maxMana;
+	}
+	
+	@Override
+	public void updateStats() {
+		// TODO Auto-generated method stub
+		
+	}
+	
+	@Override
+	public void update(World world) {
+		
+		health += maxHealth * healingRate * Main.game.getDeltaFrame();
+		
+		if (health > maxHealth) health = maxHealth;
+		
+	}
+
+	@Override
+	public void damage(double damage) {
+		
+		//calculate damage
+		
+		Vector2D particlePos = this.pos.clone();
+		
+		particlePos.fluctuate(getSize());
+		
+		world.addParticle(new DAMAGE_NUMBER(particlePos, damage));
+		
+		health -= damage;
+		
+		if (health < 0) {
+			
+			health = 0;
+			
+			kill();
+			
+		}
+		
+	}
+
+	@Override
+	public void kill() {
+		Main.game.save.closeWorld();
+		Main.game.save.startLobby();
+		health = maxHealth;
+		
+	}
+
+	@Override
+	public double getSize() {
+		
+		return 0.8d;
+	}
+	
+}
+
+-----------------------------------------------------
+src\me\Josh123likeme\LORBase\EntityHolder\ZOMBIE.java
+-----------------------------------------------------
+package me.Josh123likeme.LORBase.EntityHolder;
+
+import me.Josh123likeme.LORBase.GameHolder.World;
+import me.Josh123likeme.LORBase.ItemHolder.Item;
+import me.Josh123likeme.LORBase.ItemHolder.ZOMBIE_FLESH;
+import me.Josh123likeme.LORBase.ParticleHolder.DAMAGE_NUMBER;
+import me.Josh123likeme.LORBase.Types.Vector2D;
+
+public class ZOMBIE extends Entity implements IAttack, IChase, ICollidable, IMoveable, IHealthy {
+	
+	private int level;
+	
+	private double health;
+	private double maxHealth;
+	
+	private long nextAttackTime;
+	private final double attackCooldown = 1d;
+	
+	public ZOMBIE(World world, Vector2D pos, double facing, int level) {
+		super(world, pos, facing);
+		
+		this.level = level;
+		
+		maxHealth = 100 * level;
+		health = maxHealth;
+		
+		nextAttackTime = System.nanoTime();
+		
+	}
+
+	@Override
+	public double getMovementSpeed() {
+		
+		return 2d;	
+	}
+	
+	@Override
+	public double getViewDistance() {
+		
+		return 10d;
+	}
+	
+	@Override
+	public double getFieldOfView() {
+		
+		return 120d;
+		
+	}
+	
+	@Override
+	public double getHealth() {
+		// TODO Auto-generated method stub
+		return health;
+	}
+
+	@Override
+	public double getMaxHealth() {
+		// TODO Auto-generated method stub
+		return maxHealth;
+	}
+	
+	@Override
+	public void updateStats() {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void damage(double damage) {
+		
+		health -= damage;
+		
+		Vector2D particlePos = this.pos.clone();
+		
+		particlePos.fluctuate(getSize());
+		
+		world.addParticle(new DAMAGE_NUMBER(particlePos, damage));
+		
+	}
+	
+	@Override
+	public double getSize() {
+		
+		return 0.8d;
+	}
+	
+	@Override
+	public void kill() {
+		
+		Item drop = new ZOMBIE_FLESH();
+		
+		world.addEntity(new ITEM_ENTITY(world, pos, 270, drop, 0.2d));
+		
+	}
+
+	@Override
+	public void tryAttack() {
+		
+		double reach = 1d;
+		
+		if (state == BrainState.ATTACK && pos.distanceTo(world.player.getPosition()) < reach && System.nanoTime() > nextAttackTime) {
+			
+			world.player.damage(random.nextDouble() * 5 * level + 5 * level);
+			
+			nextAttackTime = (long) (System.nanoTime() + attackCooldown * 1000000000);
+			
+		}
+		
+	}
+}
+
+--------------------------------------------------
+src\me\Josh123likeme\LORBase\GameHolder\Chunk.java
+--------------------------------------------------
+package me.Josh123likeme.LORBase.GameHolder;
+
+import java.awt.Graphics;
+import java.awt.image.BufferedImage;
+
+import me.Josh123likeme.LORBase.SettingsHolder;
+import me.Josh123likeme.LORBase.BlockHolder.Floor;
+import me.Josh123likeme.LORBase.BlockHolder.Wall;
+
+public class Chunk {
+	
+	//DONT change this value
+	private static final int chunkSize = 16;
+	
+	private Floor[][] floor = new Floor[chunkSize][chunkSize];
+	private Wall[][] wall = new Wall[chunkSize][chunkSize];
+	
+	private BufferedImage chunkTexture;
+	
+	private boolean chunkModified;
+	
+	public Floor getFloor(int x, int y) {
+		
+		return floor[y][x];
+		
+	}
+	
+	public Wall getWall(int x, int y) {
+		
+		if (x < 0 || x >= chunkSize || y < 0 || y >= chunkSize) return null;
+		
+		return wall[y][x];
+		
+	}
+	
+	public void setFloor(int x, int y, Floor floor) {
+		
+		if (this.floor[y][x] == floor) return;
+		
+		this.floor[y][x] = floor;
+		
+		chunkModified = true;
+		
+	}
+	
+	public void setWall(int x, int y, Wall wall) {
+		
+		if (this.wall[y][x] == wall) return;
+		
+		this.wall[y][x] = wall;
+		
+		chunkModified = true;
+		
+	}
+	
+	public void renderChunk(int x, int y, int size, Graphics g) {
+		
+		if (chunkModified) {
+			
+			stitchTexture();
+			
+			chunkModified = false;
+			
+		}
+		
+		g.drawImage(chunkTexture, x, y, size, size, null);
+		
+	}
+
+	private void stitchTexture() {
+		
+		int defaultBlockTextureSize = SettingsHolder.blockPixelSize;
+		
+		chunkTexture = new BufferedImage(chunkSize * defaultBlockTextureSize, chunkSize * defaultBlockTextureSize, BufferedImage.TYPE_INT_ARGB);
+		
+		for (int y = 0; y < chunkSize; y++) {
+			
+			for (int x = 0; x < chunkSize; x++) {
+
+				if(floor[y][x] == null) continue;
+				
+				chunkTexture.getGraphics().drawImage(floor[y][x].getTexture(),
+						x * defaultBlockTextureSize, y * defaultBlockTextureSize, defaultBlockTextureSize, defaultBlockTextureSize, null);
+				
+			}
+			
+		}
+
+		for (int y = 0; y < chunkSize; y++) {
+			
+			for (int x = 0; x < chunkSize; x++) {
+
+				if(wall[y][x] == null) continue;
+				
+				chunkTexture.getGraphics().drawImage(wall[y][x].getTexture(),
+						x * defaultBlockTextureSize, y * defaultBlockTextureSize, defaultBlockTextureSize, defaultBlockTextureSize, null);
+				
+			}
+			
+		}
+		
+	}
+	
+	public static Chunk[][] chunkify(Floor[][] floor, Wall[][] wall) {
+		
+		Chunk[][] chunks = new Chunk[(int) Math.ceil((double) floor.length / chunkSize)][(int) Math.ceil((double) floor[0].length / chunkSize)];
+		
+		for (int yOffset = 0; yOffset < chunks.length; yOffset++) {
+			
+			for (int xOffset = 0; xOffset < chunks[0].length; xOffset++) {
+				
+				Chunk chunk = new Chunk();
+				
+				for (int y = 0; y < chunkSize; y++) {
+					
+					for (int x = 0; x < chunkSize; x++) {
+						
+						try {
+							
+							chunk.setFloor(x, y, floor[yOffset * chunkSize + y][xOffset * chunkSize + x]);
+							chunk.setWall(x, y, wall[yOffset * chunkSize + y][xOffset * chunkSize + x]);
+							
+						} catch(ArrayIndexOutOfBoundsException e) { }
+						
+						
+						
+					}
+					
+				}
+				
+				chunks[yOffset][xOffset] = chunk;
+				
+				chunk.stitchTexture();
+				
+			}
+			
+		}
+		
+		return chunks;
+		
+	}
+	
+	public static int getChunkSize() {
+		
+		return chunkSize;
+		
+	}
+	
+}
+
+--------------------------------------------------
+src\me\Josh123likeme\LORBase\GameHolder\Lobby.java
+--------------------------------------------------
+package me.Josh123likeme.LORBase.GameHolder;
+
+import java.awt.Graphics;
+import java.util.ArrayList;
+import java.util.List;
+
+import me.Josh123likeme.LORBase.Game;
+import me.Josh123likeme.LORBase.Main;
+import me.Josh123likeme.LORBase.UI.Menu;
+
+class Lobby {
+
+	private Game game;
+	
+	private Menu mainMenu;
+	private Save save;
+	
+	private List<Menu> menuStack = new ArrayList<Menu>();
+
+	public Lobby(Save save) {
+		
+		this.save = save;
+		
+		game = Main.game;
+		
+		initMenus();
+		
+		menuStack.add(mainMenu);
+		
+	}
+	
+	private void initMenus() {
+		
+		mainMenu = new Menu();
+		mainMenu.createButton("ENTER", "Enter Labyrinth", 0.7, 0.8, 0.25, 0.15);
+		mainMenu.createButton("INCREASE_LEVEL", " > ", 0.625, 0.825, 0.05, 0.1);
+		mainMenu.createButton("DECREASE_LEVEL", " < ", 0.525, 0.825, 0.05, 0.1);
+		mainMenu.createElement("LEVEL", " " + Integer.toString(save.level) + " ", 0.575, 0.825, 0.05, 0.1);
+		
+	}
+	
+	public void render(Graphics g) {
+
+		save.player.getInventory().render(g);
+		
+		peekMenuStack().render(g);
+		
+	}
+	
+	public void update() {
+		
+		save.player.getInventory().updateInventoryUI();
+		
+	}
+	
+	public void detectMenuClicks() {
+		
+		Menu topMenu = peekMenuStack();
+		
+		String button = game.mouseWitness.isLeftClicked() ? topMenu.getButtonAt(game.mouseWitness.getMouseX(), game.mouseWitness.getMouseY()) : null;
+		
+		if (button == null) return;
+		
+		if (button == "BACK") {
+			
+			popMenuStack();
+			
+		}
+		
+		if (topMenu == mainMenu && button == "ENTER") {
+			
+			save.startWorld();
+			save.closeLobby();
+			
+		}
+		else if (topMenu == mainMenu && button == "INCREASE_LEVEL") {
+			
+			save.level = save.level + 1 <= 10 ? save.level + 1 : 1;
+			
+			mainMenu.updateElementText("LEVEL", " " + Integer.toString(save.level) + " ");
+			
+		}
+		else if (topMenu == mainMenu && button == "DECREASE_LEVEL") {
+			
+			save.level = save.level - 1 >= 1 ? save.level - 1 : 10;
+			
+			mainMenu.updateElementText("LEVEL", " " + Integer.toString(save.level) + " ");
+			
+		}
+		
+	}
+	
+	private Menu peekMenuStack() {
+		
+		return menuStack.get(menuStack.size() - 1);
+		
+	}
+	
+	private void popMenuStack() {
+		
+		menuStack.remove(menuStack.size() - 1);
+		
+	}
+	
+}
+
+-------------------------------------------------
+src\me\Josh123likeme\LORBase\GameHolder\Save.java
+-------------------------------------------------
+package me.Josh123likeme.LORBase.GameHolder;
+
+import java.awt.Graphics;
+
+import me.Josh123likeme.LORBase.Game;
+import me.Josh123likeme.LORBase.Main;
+import me.Josh123likeme.LORBase.EntityHolder.PLAYER;
+import me.Josh123likeme.LORBase.Types.Vector2D;
+import me.Josh123likeme.LORBase.UI.Menu;
+
+public class Save {
+
+	private Game game;
+	
+	public Lobby lobby;
+	public World world;
+	
+	private Thread worldLoadThread;
+	private boolean worldReady = false;
+	public int level = 1;
+	
+	public PLAYER player;
+	
+	public boolean gamePaused;
+	private Menu pauseMenu;
+	
+	public boolean running;
+	
+	public Save() {
+		
+		running = true;
+		
+		game = Main.game;
+		
+		player = new PLAYER(world, new Vector2D(1, 1), 90);
+		
+		initMenus();
+		
+		startLobby();		
+		
+		gamePaused = false;
+	}
+	
+	private void initMenus() {
+		
+		pauseMenu = new Menu();
+		pauseMenu.createButton("RESUME", "Resume Game", 0.4, 0.2, 0.2, 0.2);
+		pauseMenu.createButton("SETTINGS", "Settings", 0.4, 0.45, 0.2, 0.2);
+		pauseMenu.createButton("EXIT", "Quit Game", 0.4, 0.7, 0.2, 0.2);
+		
+	}
+	
+	public void startWorld() {
+		
+		if (worldLoadThread != null && worldLoadThread.isAlive()) return;
+		
+		final Save thiz = this;
+		
+		worldLoadThread = new Thread(new Runnable() {
+		    @Override
+		    public void run() {
+		    	
+		        world = new World(thiz, level);
+		        
+		        player.updatePlayerInstance(world);
+		        
+		        worldReady = true;
+		        
+		    }
+		});  
+		worldLoadThread.start();
+		
+		
+		
+	}
+	
+	public void closeWorld() {
+		
+		world = null;
+		worldReady = false;
+		
+	}
+	
+	public void startLobby() {
+		
+		lobby = new Lobby(this);
+		
+	}
+	
+	public void closeLobby() {
+		
+		lobby = null;
+		
+	}
+	
+	public void render(Graphics g) {
+		
+		if (worldReady) world.render(g);
+		if (lobby != null) lobby.render(g);	
+		
+		if (gamePaused) {
+			
+			pauseMenu.render(g);
+			
+		}
+		
+		
+		
+	}
+	
+	private void save() {
+		
+		
+		
+	}
+	
+	public void update() {
+		
+		if (worldReady) {
+			
+			world.update();
+			
+		}
+		if (lobby != null) {
+			
+			lobby.update();
+			lobby.detectMenuClicks();
+				
+		}
+		
+		//menu interaction
+		
+		if (game.mouseWitness.isLeftClicked() && gamePaused && pauseMenu.getButtonAt(game.mouseWitness.getMouseX(), game.mouseWitness.getMouseY()) != null) {
+			
+			switch (pauseMenu.getButtonAt(game.mouseWitness.getMouseX(), game.mouseWitness.getMouseY())) {
+			
+			case "RESUME":
+				
+				gamePaused = !gamePaused;
+				
+				break;
+			
+			case "SETTINGS":	
+				
+				break;
+			
+			case "EXIT":
+				
+				if (lobby != null) {
+					
+					closeLobby();
+					
+					save();
+					
+					running = false;
+					
+				}
+				else {
+					
+					closeWorld();
+					
+					startLobby();
+					
+					gamePaused = !gamePaused;
+					
+				}
+				
+				break;
+			
+			}
+			
+		}
+		
+	}
+	
+	public void updateInfrequent() {
+		
+		if (world != null) {
+			
+			world.updateInfrequent();
+			
+		}
+		
+	}
+	
+	public boolean inWorld() {
+		
+		if (world != null) return true;
+		
+		return false;
+		
+	}
+	
+}
+
+--------------------------------------------------
+src\me\Josh123likeme\LORBase\GameHolder\World.java
+--------------------------------------------------
+package me.Josh123likeme.LORBase.GameHolder;
+
+import java.awt.Color;
+import java.awt.Graphics;
+import java.awt.image.BufferedImage;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Random;
+
+import me.Josh123likeme.LORBase.FrameData;
+import me.Josh123likeme.LORBase.Game;
+import me.Josh123likeme.LORBase.Main;
+import me.Josh123likeme.LORBase.ResourceLoader;
+import me.Josh123likeme.LORBase.SettingsHolder;
+import me.Josh123likeme.LORBase.WorldData;
+import me.Josh123likeme.LORBase.BlockHolder.Floor;
+import me.Josh123likeme.LORBase.BlockHolder.Wall;
+import me.Josh123likeme.LORBase.EntityHolder.*;
+import me.Josh123likeme.LORBase.Generators.CaveMaze;
+import me.Josh123likeme.LORBase.Generators.Generator;
+import me.Josh123likeme.LORBase.InputListener.MouseWitness;
+import me.Josh123likeme.LORBase.ItemHolder.Item;
+import me.Josh123likeme.LORBase.ItemHolder.TELEPORTATION_CORE;
+import me.Josh123likeme.LORBase.InputListener.ControlHolder.ButtonType;
+import me.Josh123likeme.LORBase.ParticleHolder.*;
+import me.Josh123likeme.LORBase.Types.Vector2D;
+import me.Josh123likeme.LORBase.UI.ProgressBar;
+
+public class World {
+	
+	private static Random random = new Random();
+	
+	@SuppressWarnings("unused")
+	private Save save;
+	
+	public Chunk[][] chunks;
+	public PLAYER player;
+	public WorldData worldData;
+	
+	private boolean inventoryOpen = false;
+	
+	private ProgressBar healthBar;
+	private ProgressBar manaBar;
+	
+	ArrayList<Entity> entities = new ArrayList<Entity>();
+	ArrayList<Entity> entityBuffer = new ArrayList<Entity>();
+	ArrayList<Particle> particles = new ArrayList<Particle>();
+	ArrayList<Particle> particleBuffer = new ArrayList<Particle>();
+	
+	public World(Save save, int level) {
+		
+		this.save = save;
+		this.player = save.player;
+		
+		worldData = new WorldData();
+		
+		worldData.CameraPosition = player.getPosition();
+		worldData.FocusPlayer = true;
+		worldData.Zoom = SettingsHolder.zoom;
+
+		healthBar = new ProgressBar(new Color(121, 13, 17), new Color(205, 24, 31), 
+				0.2, 0.85, 0.29, 0.05);
+		
+		manaBar = new ProgressBar(new Color(24, 30, 121), new Color(45, 54, 200), 
+				0.8, 0.85, -0.29, 0.05);
+		
+		CaveMaze generator = Generator.createNewCaveMaze();
+		
+		Main.game.debugInfo.addTask("Generating World"); //loading info
+		
+		chunks = generator.generateMaze(level);
+		
+		Main.game.debugInfo.removeTask("Generating World"); //loading info
+		
+		List<Vector2D> spawnLocations = new ArrayList<Vector2D>();
+		
+		for (int y = 0; y < chunks.length * Chunk.getChunkSize(); y++) {
+			
+			Main.game.debugInfo.addOrUpdateTask("Finding Spawn Locations", 
+					Math.round((double) y / (chunks.length * Chunk.getChunkSize()) * 100) + "%"); //loading info
+			
+			for (int x = 0; x < chunks[0].length * Chunk.getChunkSize(); x++) {
+				
+				if (getWall(x, y) == Wall.AIR) spawnLocations.add(new Vector2D(x, y));
+				
+			}
+			
+		}
+		
+		Main.game.debugInfo.removeTask("Finding Spawn Locations"); //loading info
+		
+		player.setPosition(spawnLocations.get(random.nextInt(spawnLocations.size())));
+		
+		entities.add(player);
+		
+		//add zombies
+		int numberOfZombies = (((80 + 16 * level) * (80 + 16 * level)) / 500) * level;
+		
+		for (int i = 0; i < numberOfZombies; i++) {
+			
+			Main.game.debugInfo.addOrUpdateTask("Spawning Zombies", 
+					Math.round((double) i / numberOfZombies * 100) + "%"); //loading info
+			
+			entities.add(new ZOMBIE(this, spawnLocations.get(random.nextInt(spawnLocations.size())), 0, level));
+			
+		}
+		
+		Main.game.debugInfo.removeTask("Spawning Zombies");
+		
+		for (int y = 0; y < chunks.length * Chunk.getChunkSize(); y++) {
+			
+			Main.game.debugInfo.addOrUpdateTask("Placing Gargoyles", 
+					Math.round((double) y / (chunks.length * Chunk.getChunkSize()) * 100) + "%"); //loading info
+			
+			for (int x = 0; x < chunks[0].length * Chunk.getChunkSize(); x++) {
+				
+				if (getWall(x, y) == Wall.STATUE_PODIUM) {
+					
+					entities.add(new GARGOYLE(this, new Vector2D(x + 0.1, y + 0.1), 0, level));
+					
+				}
+				
+			}
+			
+		}
+		
+		Main.game.debugInfo.removeTask("Placing Gargoyles");
+			
+	}
+	
+	public void render(Graphics g) {
+		
+		FrameData frameData = Main.game.frameData;
+		
+		g.drawImage(ResourceLoader.getTexture(Floor.MOGUS), 1000, 1000, 500, 500, null);
+		
+		int blocksOnScreenX = (int) Math.ceil(frameData.Width / (16 * worldData.Zoom));
+		int BlocksOnScreenY = (int) Math.ceil(frameData.Height / (16 * worldData.Zoom));
+		
+		blocksOnScreenX += Chunk.getChunkSize() * 2;
+		BlocksOnScreenY += Chunk.getChunkSize() * 2;
+		
+		int tlx = (int) (Math.floor(worldData.CameraPosition.X) - blocksOnScreenX / 2) / Chunk.getChunkSize();
+		int tly = (int) (Math.floor(worldData.CameraPosition.Y) - BlocksOnScreenY / 2) / Chunk.getChunkSize();
+		int brx = (int) (Math.ceil(worldData.CameraPosition.X) + blocksOnScreenX / 2) / Chunk.getChunkSize();
+		int bry = (int) (Math.ceil(worldData.CameraPosition.Y) + BlocksOnScreenY / 2) / Chunk.getChunkSize();
+		
+		if (tlx < 0) tlx = 0;
+		if (tly < 0) tly = 0;
+		if (brx > chunks[0].length - 1) brx = chunks[0].length - 1;
+		if (bry > chunks.length - 1) bry = chunks.length - 1;
+		
+		for (int y = tly; y <= bry; y++) {
+			
+			for (int x = tlx; x <= brx; x++) {
+				
+				chunks[y][x].renderChunk(
+						(int) (x * 16 * Chunk.getChunkSize() * worldData.Zoom - worldData.CameraPosition.X * 16 * worldData.Zoom) + frameData.Width / 2,
+						(int) (y * 16 * Chunk.getChunkSize() * worldData.Zoom - worldData.CameraPosition.Y * 16 * worldData.Zoom) + frameData.Height / 2,
+						(int) (16 * Chunk.getChunkSize() * worldData.Zoom + 1), g);
+				
+
+			}
+			
+		}
+		
+		for (Entity entity : entities) {
+			
+			BufferedImage texture = ResourceLoader.rotateImageByDegrees(entity.getTexture(), entity.getFacing());
+
+			g.drawImage(texture,
+					(int) (entity.getPosition().X * 16 * worldData.Zoom - worldData.CameraPosition.X * 16 * worldData.Zoom) + frameData.Width / 2,
+					(int) (entity.getPosition().Y * 16 * worldData.Zoom - worldData.CameraPosition.Y * 16 * worldData.Zoom) + frameData.Height / 2, 
+					(int) (entity.getSize() * 16 * worldData.Zoom + 1),
+					(int) (entity.getSize() * 16 * worldData.Zoom + 1),
+					null);
+			
+		}
+		
+		for (Particle particle : particles) {
+			
+			g.drawImage(particle.getTexture(),
+					(int) (particle.getPosition().X * 16 * worldData.Zoom - worldData.CameraPosition.X * 16 * worldData.Zoom) + frameData.Width / 2,
+					(int) (particle.getPosition().Y * 16 * worldData.Zoom - worldData.CameraPosition.Y * 16 * worldData.Zoom) + frameData.Height / 2, 
+					(int) (particle.getSize() * (particle.getTexture().getWidth() / particle.getTexture().getHeight()) * 16 * worldData.Zoom + 1),
+					(int) (particle.getSize() * 16 * worldData.Zoom + 1),
+					null);
+			
+		}
+		
+		if (inventoryOpen) player.getInventory().render(g);
+		
+		//render stat bars
+		healthBar.render(g, player.getHealth() / player.getMaxHealth(),
+				Math.round(player.getHealth()) + " / " + Math.round(player.getMaxHealth()));
+		manaBar.render(g, player.getMana() / player.getMaxMana(), 
+				Math.round(player.getMana()) + " / " + Math.round(player.getMaxMana()));
+		
+	}
+	
+	public void updateInfrequent() {
+		
+	}
+	
+	public void update() {
+		
+		//check win
+		boolean hasGargoyles = false;
+		
+		for (Entity entity : entities) {
+			
+			if (entity instanceof GARGOYLE) {
+				
+				hasGargoyles = true;
+				break;
+				
+			}
+			
+		}
+		
+		if (!hasGargoyles) {
+			
+			player.kill();
+			
+		}
+		
+		//player updates
+		updatePlayer();
+		
+		//attack
+		MouseWitness mouseWitness = Main.game.mouseWitness;
+		FrameData frameData = Main.game.frameData;
+		
+		Vector2D mouseWorldPos = new Vector2D();
+		
+		mouseWorldPos.X = (mouseWitness.getMouseX() - frameData.Width / 2 + worldData.CameraPosition.X * 16 * worldData.Zoom) / (16 * worldData.Zoom);
+		mouseWorldPos.Y = (mouseWitness.getMouseY() - frameData.Height / 2 + worldData.CameraPosition.Y * 16 * worldData.Zoom) / (16 * worldData.Zoom);
+		
+		Main.game.debugInfo.addOrUpdateTask("Mouse world pos: ", mouseWorldPos.X + ", " + mouseWorldPos.Y);
+		
+		if (mouseWitness.isLeftClicked()) {
+			
+			for (Entity entity : entities) {
+						
+				if (entity instanceof PLAYER) continue;
+				
+				if (entity instanceof IHealthy) {
+					
+					//check to see if attacking outside of range
+					if (player.getPosition().distanceTo(entity.getPosition()) > 5) continue;
+					
+					if (mouseWorldPos.distanceTo(entity.getPosition()) < 1) {
+						
+						((IHealthy) entity).damage(10);
+						
+					}
+					
+				}
+					
+			}
+			
+		}
+		
+		//right click ability
+		if (mouseWitness.isRightClicked()) {
+			
+			boolean canTeleport = false;
+			
+			for (Item item : player.getInventory().getItems()) {
+				
+				if (item != null && item.getClass().getSimpleName() == TELEPORTATION_CORE.class.getSimpleName()) {
+					
+					canTeleport = true;
+					
+					break;
+					
+				}
+				
+			}
+			
+			if (getWall((int) mouseWorldPos.X, (int) mouseWorldPos.Y) != Wall.AIR) canTeleport = false;
+			if (getWall((int) (mouseWorldPos.X + player.getSize()), (int) mouseWorldPos.Y) != Wall.AIR) canTeleport = false;
+			if (getWall((int) mouseWorldPos.X, (int) (mouseWorldPos.Y + player.getSize())) != Wall.AIR) canTeleport = false;
+			if (getWall((int) (mouseWorldPos.X + player.getSize()), (int) (mouseWorldPos.Y + player.getSize())) != Wall.AIR) canTeleport = false;
+			
+			if (canTeleport) player.setPosition(mouseWorldPos);
+			
+		}
+		
+		//entity elimination
+		List<Entity> entitiesToRemove = new ArrayList<Entity>();
+		
+		for (Entity entity : entities) {
+
+			if (entity instanceof IHealthy) {
+				
+				if (((IHealthy) entity).getHealth() <= 0) {
+					
+					((IHealthy) entity).kill();
+					
+					entitiesToRemove.add(entity);
+					
+				}
+				
+			}
+			
+			if (entity instanceof ITEM_ENTITY && 
+					entity.getPosition().distanceTo(player.getPosition().X, player.getPosition().Y) < 1) {
+				
+				if (!player.getInventory().isFull() && ((ITEM_ENTITY) entity).canPickup()) {
+					
+					player.getInventory().addItem(((ITEM_ENTITY) entity).getItem());
+					
+					entitiesToRemove.add(entity);
+					
+				}
+				
+			}		
+				
+		}
+		
+		for (Entity entity : entitiesToRemove) {
+			
+			entities.remove(entity);
+			
+		}
+		
+		//particle elimination
+		List<Particle> particlesToRemove = new ArrayList<Particle>();
+		
+		for (Particle particle : particles) {
+			
+			if (!particle.isAlive()) particlesToRemove.add(particle);
+				
+		}
+		
+		for (Particle particle : particlesToRemove) {
+			
+			particles.remove(particle);
+			
+		}
+		
+		//entity updates
+		updateEntities();
+		
+		//ui updates
+		if (Main.game.keyboardWitness.isButtonTyped(ButtonType.INVENTORY)) {
+			
+			if (inventoryOpen) player.getInventory().closeInventory();
+			
+			inventoryOpen = !inventoryOpen;
+			
+		}
+		
+		if (inventoryOpen) player.getInventory().updateInventoryUI();
+		
+		//buffer pushing
+		
+		entities.addAll(entityBuffer);
+		entityBuffer.clear();
+		
+		particles.addAll(particleBuffer);
+		particleBuffer.clear();
+		
+	}
+	
+	private void updatePlayer() {
+		
+		Game game = Main.game;
+		
+		Vector2D movementVector = new Vector2D(0, 0);
+		
+		if (game.keyboardWitness.isButtonHeld(ButtonType.MOVE_UP)) movementVector.Y -= 1;
+		if (game.keyboardWitness.isButtonHeld(ButtonType.MOVE_LEFT)) movementVector.X -= 1;
+		if (game.keyboardWitness.isButtonHeld(ButtonType.MOVE_DOWN)) movementVector.Y += 1;
+		if (game.keyboardWitness.isButtonHeld(ButtonType.MOVE_RIGHT)) movementVector.X += 1;
+
+		movementVector.normalise();
+		
+		movementVector.X = movementVector.X * player.getMovementSpeed() * game.frameData.DeltaFrame;
+		movementVector.Y = movementVector.Y * player.getMovementSpeed() * game.frameData.DeltaFrame;
+		
+		player.moveEntity(new Vector2D(player.getPosition().X + movementVector.X, player.getPosition().Y + movementVector.Y), this);
+		
+		Vector2D origin = new Vector2D();
+		
+		double angle = origin.directionTo(movementVector);
+		
+		player.setFacing(angle);
+		
+		if (worldData.FocusPlayer) {
+			
+			worldData.CameraPosition.X = player.getPosition().X;
+			worldData.CameraPosition.Y = player.getPosition().Y;
+			
+		}
+	}
+	
+	private void updateEntities() {
+		
+		for (Entity entity : entities) {
+			
+			if (entity.getPosition().distanceTo(player.getPosition()) < 50) entity.update(this);
+
+		}
+		
+	}
+	
+	public void addEntity(Entity entity) {
+		
+		entityBuffer.add(entity);
+		
+	}
+	
+	public void addParticle(Particle particle) {
+		
+		particleBuffer.add(particle);
+		
+	}
+	
+	public Floor getFloor(int x, int y) {
+		
+		return chunks[(int) y / 16][(int) x / 16].getFloor(x % 16, y % 16);
+		
+	}
+	
+	public Wall getWall(int x, int y) {
+		
+		return chunks[(int) y / 16][(int) x / 16].getWall(x % 16, y % 16);
+		
+	}
+	
+	public void setFloor(int x, int y, Floor floor) {
+		
+		chunks[(int) y / 16][(int) x / 16].setFloor(x % 16, y % 16, floor);
+		
+	}
+	
+	public void setWall(int x, int y, Wall wall) {
+		
+		chunks[(int) y / 16][(int) x / 16].setWall(x % 16, y % 16, wall);
+		
+	}
+	
+	public int getWidth() {
+		
+		return chunks[0].length * Chunk.getChunkSize();
+		
+	}
+	
+	public int getHeight() {
+		
+		return chunks.length * Chunk.getChunkSize();
+		
+	}
+	
+}
+
+-----------------------------------------------------
+src\me\Josh123likeme\LORBase\Generators\BoxyMaze.java
+-----------------------------------------------------
+package me.Josh123likeme.LORBase.Generators;
+
+import java.util.Random;
+
+import me.Josh123likeme.LORBase.BlockHolder.Floor;
+import me.Josh123likeme.LORBase.BlockHolder.Wall;
+import me.Josh123likeme.LORBase.GameHolder.Chunk;
+
+public class BoxyMaze {
+
+	private static Random random = new Random();
+	
+	public Chunk[][] generateMaze() {
+
+		Floor[][] floor = new Floor[128][128];
+		Wall[][] wall = new Wall[128][128];
+		
+		for (int y = 0; y < floor.length; y++) {
+			
+			for (int x = 0; x < floor[0].length; x++) {
+				
+				floor[y][x] = Floor.LABYRINTH_FLOOR;
+				wall[y][x] = Wall.AIR;
+				
+			}
+				
+		}
+		
+		for (int i = 0; i < wall[0].length * wall.length / 150; i++) {
+			
+			int ox = random.nextInt(wall[0].length);
+			int oy = random.nextInt(wall.length);
+			
+			int w = random.nextInt(20);
+			int h = random.nextInt(20);
+			
+			for (int y = 0; y < h; y++) {
+				
+				for (int x = 0; x < w; x++) {
+					
+					if (ox + x < 10 || ox + x >= wall[0].length - 10 || oy + y < 10 || oy + y >= wall.length - 10) continue;
+					
+					wall[oy + y][ox + x] = Wall.LABYRINTH_WALL;
+					
+				}
+				
+			}
+			
+		}
+		
+		return Chunk.chunkify(floor, wall);
+		
+	}
+	
+}
+
+-----------------------------------------------------
+src\me\Josh123likeme\LORBase\Generators\CaveMaze.java
+-----------------------------------------------------
+package me.Josh123likeme.LORBase.Generators;
+
+import java.util.Random;
+
+import me.Josh123likeme.LORBase.BlockHolder.Floor;
+import me.Josh123likeme.LORBase.BlockHolder.Wall;
+import me.Josh123likeme.LORBase.GameHolder.Chunk;
+import me.Josh123likeme.LORBase.Types.Vector2D;
+import me.Josh123likeme.LORBase.Utils.Prims;
+
+public class CaveMaze {
+	
+	private static Random random = new Random();
+	
+	private int width;
+	private int height;
+	private int numberOfCaverns;
+	
+	private Floor[][] floor;
+	private Wall[][] wall;
+	
+	public Chunk[][] generateMaze(int difficulty) {
+		
+		if (difficulty <= 0) throw new IllegalArgumentException("The difficulty must be larger than zero");
+		
+		if (difficulty > 50) throw new IllegalArgumentException("The difficulty cannot exceed 50");
+		
+		//parameter functions
+		width = 80 + 16 * difficulty;
+		height = 80 + 16 * difficulty;
+		numberOfCaverns = (width * height) / 500;
+		
+		//init
+		floor = new Floor[height][width];
+		wall = new Wall[height][width];
+		
+		for (int y = 0; y < height; y++) {
+			
+			for (int x = 0; x < width; x++) {
+				
+				floor[y][x] = Floor.LABYRINTH_FLOOR;
+				wall[y][x] = Wall.LABYRINTH_WALL;
+				
+			}
+			
+		}
+		
+		//random points
+		Vector2D[] points = new Vector2D[numberOfCaverns];
+		
+		for (int i = 0; i < points.length; i++) {
+			
+			points[i] = new Vector2D();
+			
+			points[i].X = random.nextInt(width - 20) + 10;
+			points[i].Y = random.nextInt(height - 20) + 10;
+			
+			wall[(int) points[i].Y][(int) points[i].X] = Wall.STATUE_PODIUM;
+			
+		}
+		
+		//cavern formation
+		for (int i = 0; i < points.length; i++) {
+			
+			generateCavern((int) points[i].X, (int) points[i].Y);
+			
+		}
+		
+		//tunnel formation
+		
+		Vector2D[][] tunnels = Prims.doPrims(points);
+		
+		for (Vector2D[] pair : tunnels) {
+			
+			generateTunnel((int) pair[0].X, (int) pair[0].Y, (int) pair[1].X, (int) pair[1].Y);
+			
+		}
+		
+		//border assembly
+		for (int i = 0; i < wall[0].length; i++) {
+			
+			wall[0][i] = Wall.LABYRINTH_WALL;
+			
+		}
+		
+		for (int i = 1; i < wall.length - 1; i++) {
+			
+			wall[i][0] = Wall.LABYRINTH_WALL;
+			wall[i][wall.length - 1] = Wall.LABYRINTH_WALL;
+			
+		}
+		
+		for (int i = 0; i < wall[wall.length - 1].length; i++) {
+			
+			wall[wall.length - 1][i] = Wall.LABYRINTH_WALL;
+			
+		}
+		
+		//finalisation
+		//add podiums
+		for (int i = 0; i < points.length; i++) { 
+			
+			wall[(int) points[i].Y][(int) points[i].X] = Wall.STATUE_PODIUM;
+			
+		}
+		
+		Chunk[][] maze = Chunk.chunkify(floor, wall);
+		
+		return maze;
+		
+	}
+	
+	private void generateCavern(int x, int y) {
+		
+		recurGenerateCavern(x, y, 1d);
+		
+	}
+	
+	private void recurGenerateCavern(int x, int y, double clearProbability) {
+		
+		if (x < 0 || x >= width || y < 0 || y >= height) return;
+		
+		generateSquare(x, y);
+		
+		if (random.nextDouble() <= clearProbability) recurGenerateCavern(x + 1, y, clearProbability - 0.1);
+		if (random.nextDouble() <= clearProbability) recurGenerateCavern(x, y + 1, clearProbability - 0.1);
+		if (random.nextDouble() <= clearProbability) recurGenerateCavern(x - 1, y, clearProbability - 0.1);
+		if (random.nextDouble() <= clearProbability) recurGenerateCavern(x, y - 1, clearProbability - 0.1);
+			
+	}
+	
+	private void generateTunnel(int x1, int y1, int x2, int y2) {
+		
+		double slope = (y1 - y2) / ((x1 - x2) + 0.01);
+		
+		double offset = slope * -x1 + y1;
+
+		if (x1 > x2) {
+			
+			x1 -= x2;
+			x2 += x1;
+			x1 = x2 - x1;
+			
+		}
+		
+		for (double x = x1; x <= x2; x += 0.01) {
+
+			generateSquare((int) x, (int) (slope * x + offset));
+			
+			wall[(int) (slope * x + offset)][(int) x] = Wall.AIR;
+			
+		}
+		
+	}
+	
+	private void generateSquare(int x, int y) {
+		
+		for (int row = y - 1; row <= y + 1; row++) {
+			
+			for (int column = x - 1; column <= x + 1; column++) {
+				
+				if (column < 0 || column >= width || row < 0 || row >= height) continue;
+				
+				wall[row][column] = Wall.AIR;
+				
+			}
+			
+		}
+		
+	}
+	
+}
+
+------------------------------------------------------
+src\me\Josh123likeme\LORBase\Generators\EmptyMaze.java
+------------------------------------------------------
+package me.Josh123likeme.LORBase.Generators;
+
+import me.Josh123likeme.LORBase.BlockHolder.*;
+import me.Josh123likeme.LORBase.GameHolder.Chunk;
+
+public class EmptyMaze {
+
+	public Chunk[][] generateMaze() {
+		
+		Floor[][] floor = new Floor[128][128];
+		Wall[][] wall = new Wall[128][128];
+		
+		for (int y = 0; y < floor.length; y++) {
+			
+			for (int x = 0; x < floor[0].length; x++) {
+				
+				floor[y][x] = Floor.LABYRINTH_FLOOR;
+				wall[y][x] = Wall.AIR;
+				
+			}
+				
+		}
+		
+		for (int y = 20; y < 100; y++) {
+			
+			for (int x = 20; x < 100; x++) {
+				
+				wall[y][x] = Wall.LABYRINTH_WALL;
+				
+			}
+			
+		}
+		
+		return Chunk.chunkify(floor, wall);
+		
+	}
+	
+}
+
+------------------------------------------------------
+src\me\Josh123likeme\LORBase\Generators\Generator.java
+------------------------------------------------------
+package me.Josh123likeme.LORBase.Generators;
+
+public abstract class Generator {
+	
+	//simple maze
+	public static SimpleMaze createNewRandomMazeGenerator() {
+		
+		return new SimpleMaze();
+		
+	}
+	
+	//normal labyrinth generation
+	public static LabyrinthMaze createNewLabyrinthGenerator() {
+		
+		return new LabyrinthMaze();
+		
+	}
+	
+	//cave labyrinth generation
+	public static CaveMaze createNewCaveMaze() {
+		
+		return new CaveMaze();
+		
+	}
+	
+	//just an empty space
+	public static EmptyMaze createNewEmptyMaze() {
+		
+		return new EmptyMaze();
+		
+	}
+	
+	//a maze filled with random boxes
+	public static BoxyMaze createNewBoxyMaze() {
+			
+		return new BoxyMaze();
+			
+	}
+	
+}
+
+----------------------------------------------------------
+src\me\Josh123likeme\LORBase\Generators\LabyrinthMaze.java
+----------------------------------------------------------
+package me.Josh123likeme.LORBase.Generators;
+
+import java.awt.Color;
+import java.awt.Graphics;
+import java.util.Random;
+
+import me.Josh123likeme.LORBase.BlockHolder.Floor;
+import me.Josh123likeme.LORBase.BlockHolder.Wall;
+import me.Josh123likeme.LORBase.Types.Vector2D;
+
+public class LabyrinthMaze {
+
+	final int smallRoomSize = 16;
+	final int hallwayWidth = 4;
+	final double chanceOfRoomPlace = 0.3d;
+	
+	@SuppressWarnings("unused")
+	private Floor[][] floor;
+	@SuppressWarnings("unused")
+	private Wall[][] wall;
+	
+	private int width;
+	private int height;
+	
+	private int[][] template;
+	
+	private static Random random = new Random();
+	
+	public void generateMaze(int width, int height) {
+		
+		floor = new Floor[height][width];
+		wall = new Wall[height][width];
+		
+		this.width = width;
+		this.height = height;
+		
+		template = new int[height][width];
+		
+		generate();
+		
+	}
+	
+	private void generate() {
+		
+		for (int y = 0; y < height; y++) {
+			
+			for (int x = 0; x < width; x++) {
+				
+				template[y][x] = 0;
+				
+			}
+			
+		}
+		
+		//generating room map
+		
+		int roomCounter = 1;
+		
+		for (Room room : Room.values()) {
+			
+			for (int y = 0; y < height; y++) {
+				
+				for (int x = 0; x < width; x++) {
+					
+					if (willRoomFit(room, x, y)) {
+						
+						if (random.nextDouble() > chanceOfRoomPlace && !room.equals(Room.SINGLE)) continue;
+						
+						for (Vector2D vec : room.getOriginPositions()) {
+							
+							template[(int) (vec.Y + y)][(int) (vec.X + x)] = roomCounter;
+								
+						}
+						
+						roomCounter++;
+						
+					}
+					
+				}
+				
+			}
+			
+		}
+		
+	}
+	
+	private Boolean willRoomFit(Room room, int x, int y) {
+		
+		for (Vector2D vec : room.getOriginPositions()) {
+			
+			if (vec.X + x >= width || vec.Y + y >= height) return false;
+			
+			if (template[(int) (vec.Y + y)][(int) (vec.X + x)] != 0) return false;
+			
+		}
+		
+		return true;
+		
+	}
+	
+	public void displayLabyrinth(Graphics g) {
+		
+		for (int y = 0; y < height; y++) {
+			
+			for (int x = 0; x < width; x++) {
+				
+				g.setColor(hashColor(template[y][x] - 1));
+				
+				g.fillRect(x * 64, y * 64, 64, 64);
+				
+			}
+			
+		}
+		
+	}
+	
+	private Color hashColor(int value) {
+		
+		
+		//69 provided by Emily Conlon
+		//196 provided by Bradley Conlon
+		//56 provided by Michael Aldridge
+		
+		return new Color((value * 69) % 256, (value * 196) % 256, (value * 56) % 256);
+		
+	}
+	
+	private enum Room {
+
+		BOX(new Vector2D(0,0), new Vector2D(1,0), new Vector2D(1,1), new Vector2D(0,1)),
+		// OO
+		// OO
+		L_0(new Vector2D(0,0), new Vector2D(1,0), new Vector2D(0,1)),
+		// OO
+		// O
+		L_1(new Vector2D(0,0), new Vector2D(1,0), new Vector2D(1,1)),
+		// OO
+		//  O
+		L_2(new Vector2D(1,0), new Vector2D(1,1), new Vector2D(0,1)),
+		//  O
+		// OO
+		L_3(new Vector2D(0,0), new Vector2D(0,1), new Vector2D(1,1)),
+		// O
+		// OO
+		SUPERTALL_0(new Vector2D(0,0), new Vector2D(0,1), new Vector2D(0,2)),
+		// O
+		// O
+		// O
+		SUPERTALL_1(new Vector2D(0,0), new Vector2D(1,0), new Vector2D(2,0)),
+		// OOO
+		TALL_0(new Vector2D(0,0), new Vector2D(0,1)),
+		// O
+		// O
+		TALL_1(new Vector2D(0,0), new Vector2D(1,0)),
+		// OO
+		SINGLE(new Vector2D(0,0)),
+		// O
+		
+		;
+		
+		private final Vector2D[] originPositions;
+		
+		Room(Vector2D o0){
+			
+			 originPositions = new Vector2D[] {o0};
+			
+		}
+		
+		Room(Vector2D o0, Vector2D o1){
+			
+			 originPositions = new Vector2D[] {o0, o1};
+			
+		}
+		
+		Room(Vector2D o0, Vector2D o1, Vector2D o2){
+			
+			 originPositions = new Vector2D[] {o0, o1, o2};
+			
+		}
+		
+		Room(Vector2D o0, Vector2D o1, Vector2D o2, Vector2D o3){
+			
+			 originPositions = new Vector2D[] {o0, o1, o2, o3};
+			
+		}
+		
+		public Vector2D[] getOriginPositions() {
+			
+			return originPositions;
+			
+		}
+		
+	}
+	
+}
+
+-------------------------------------------------------
+src\me\Josh123likeme\LORBase\Generators\SimpleMaze.java
+-------------------------------------------------------
+package me.Josh123likeme.LORBase.Generators;
+
+import java.util.Random;
+
+import me.Josh123likeme.LORBase.BlockHolder.Floor;
+import me.Josh123likeme.LORBase.BlockHolder.Wall;
+import me.Josh123likeme.LORBase.Types.Vector2D;
+
+public class SimpleMaze {
+
+	private Floor[][] floor;
+	private Wall[][] wall;
+	
+	public Floor[][] getFloor(){
+		
+		return floor;
+		
+	}
+	
+	public Wall[][] getWall(){
+		
+		return wall;
+		
+	}
+	
+	private static Random random = new Random();
+	
+	public Boolean[][] generateMaze(int width, int height) {
+		
+		floor = new Floor[height][width];
+		wall = new Wall[height][width];
+		
+		Boolean[][] maze = new Boolean[height][width];
+		
+		for (int i = 0; i < maze[0].length; i++) {
+			
+			maze[0][i] = true;
+			
+		}
+		
+		for (int y = 1; y < maze.length - 1; y++) {
+			
+			maze[y][0] = true;
+			
+			for (int x = 1; x < maze[0].length - 1; x++) {
+				
+				maze[y][x] = false;
+				
+			}
+			
+			maze[y][maze[0].length - 1] = true;
+			
+		}
+		
+		for (int i = 0; i < maze[0].length; i++) {
+			
+			maze[maze.length - 1][i] = true;
+			
+		}
+		
+		goForward(new Vector2D(2, (int) (2 * (height / 4))), new Vector2D(1,0), maze);
+		
+		for (int y = 0; y < floor.length; y++) {
+			
+			for (int x = 0; x < floor[0].length; x++) {
+				
+				if (maze[y][x]) wall[y][x] = Wall.LABYRINTH_WALL;
+				
+				else floor[y][x] = Floor.LABYRINTH_FLOOR;
+
+			}
+			
+		}
+		
+		return maze;
+		
+	}
+	
+	private static void goForward(Vector2D pos, Vector2D dir, Boolean[][] maze) {
+		
+		int maxDistance = maxDistance(pos, dir, maze);
+		
+		if (maxDistance <= 0) return;
+		
+		int distance = 2 * random.nextInt(10);
+		
+		if (distance > maxDistance) distance = maxDistance;
+			
+		for (int i = 0; i < distance; i++) {
+			
+			pos.X += dir.X;
+			pos.Y += dir.Y;
+				
+			maze[(int) pos.Y][(int) pos.X] = true;
+			
+		}
+		
+		int[] order = new int[] {0,1,2,3};
+		
+		for (int i = 0; i < 10; i++) {
+			
+			int one = random.nextInt(4);
+			int two = random.nextInt(4);
+			
+			int temp = order[one];			
+			order[one] = order[two];			
+			order[two] = temp;
+			
+		}
+		
+		for (int i = 0; i < order.length; i++) {
+			
+			switch (order[i]) {
+			
+			case 0:
+				
+				goForward(new Vector2D(pos.X, pos.Y), new Vector2D(1,0), maze);
+				
+				break;
+				
+			case 1:
+				
+				goForward(new Vector2D(pos.X, pos.Y), new Vector2D(-1,0), maze);
+				
+				break;
+				
+			case 2:
+				
+				goForward(new Vector2D(pos.X, pos.Y), new Vector2D(0,-1), maze);
+				
+				break;
+				
+			case 3:
+				
+				goForward(new Vector2D(pos.X, pos.Y), new Vector2D(0,1), maze);
+				
+				break;
+			
+			}
+			
+		}
+		
+	}
+	
+	private static int maxDistance(Vector2D pos, Vector2D dir, Boolean[][] maze) {
+		
+		int x = (int) pos.X;
+		int y = (int) pos.Y;
+		
+		int distance = 0;
+		
+		do  {	
+			
+			x += 2 * dir.X;
+			y += 2 * dir.Y;
+			
+			distance += 2;
+
+		}
+		while (!maze[y][x]);
+		
+		return distance - 2;
+		
+	}
+	
+}
+
+-------------------------------------------------------------
+src\me\Josh123likeme\LORBase\InputListener\ControlHolder.java
+-------------------------------------------------------------
+package me.Josh123likeme.LORBase.InputListener;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+import me.Josh123likeme.LORBase.ResourceLoader;
+
+public abstract class ControlHolder {
+
+	private static List<ButtonType> buttons = new ArrayList<ButtonType>();
+	private static List<Integer> keys = new ArrayList<Integer>();
+	
+	public static ButtonType getButton(int keyCode) {
+		
+		if (keys.indexOf(keyCode) == -1) throw new IllegalArgumentException("No binding exists for that key");
+		
+		return buttons.get(keys.indexOf(keyCode));
+		
+	}
+	
+	public static int getKey(ButtonType button) {
+		
+		if (buttons.indexOf(button) == -1) throw new IllegalArgumentException("No binding exists for that key");
+		
+		return keys.get(buttons.indexOf(button));
+		
+	}
+	
+	public static void setBind(ButtonType button, int keyCode) {
+		
+		keys.set(buttons.indexOf(button), keyCode);
+		
+	}
+	
+	public static void loadBinds() {
+		
+		List<String> lines = null;
+		
+		try {
+			
+			lines = ResourceLoader.readFromTextFile("data\\settings\\binds.txt");
+			
+		} catch (IOException e) {};
+		
+		for (ButtonType button : ButtonType.values()) {
+			
+			buttons.add(button);
+			keys.add(button.key);
+			
+		}
+		
+		if (lines != null) {
+			
+			for (String line : lines) {
+				
+				keys.set(buttons.indexOf(Enum.valueOf(ButtonType.class, line.split("=")[0])), Integer.parseInt(line.split("=")[1]));
+				
+			}
+			
+		}
+
+		saveBinds();
+		
+	}
+	
+	public static void saveBinds() {
+		
+		List<String> lines = new ArrayList<String>();
+		
+		for (int i = 0; i < buttons.size(); i++) {
+			
+			lines.add(buttons.get(i) + "=" + keys.get(i));
+			
+		}
+		
+		ResourceLoader.writeToTextFile("data\\settings\\binds.txt", lines);
+		
+	}
+	
+	public enum ButtonType {
+		
+		MOVE_UP(87),
+		MOVE_LEFT(65),
+		MOVE_DOWN(83),
+		MOVE_RIGHT(68),
+		INVENTORY(69),
+		PAUSE(27),
+		ZOOM_IN(61),
+		ZOOM_OUT(45),
+		DEBUG_TOGGLE(114),
+		
+		;
+		
+		int key;
+		
+		ButtonType(int key) {
+			
+			this.key = key;
+			
+		}
+		
+	}
+	
+}
+
+---------------------------------------------------------------
+src\me\Josh123likeme\LORBase\InputListener\KeyboardWitness.java
+---------------------------------------------------------------
+package me.Josh123likeme.LORBase.InputListener;
+
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+import me.Josh123likeme.LORBase.InputListener.ControlHolder.ButtonType;
+
+/*
+3 -- Cancel
+8 -- Backspace
+9 -- Tab
+10 -- Enter
+12 -- Clear
+16 -- Shift
+17 -- Ctrl
+18 -- Alt
+19 -- Pause
+20 -- Caps Lock
+21 -- Kana
+24 -- Final
+25 -- Kanji
+27 -- Escape
+28 -- Convert
+29 -- No Convert
+30 -- Accept
+31 -- Mode Change
+32 -- Space
+33 -- Page Up
+34 -- Page Down
+35 -- End
+36 -- Home
+37 -- Left
+38 -- Up
+39 -- Right
+40 -- Down
+44 -- Comma
+45 -- Minus
+46 -- Period
+47 -- Slash
+48 -- 0
+49 -- 1
+50 -- 2
+51 -- 3
+52 -- 4
+53 -- 5
+54 -- 6
+55 -- 7
+56 -- 8
+57 -- 9
+59 -- Semicolon
+61 -- Equals
+65 -- A
+66 -- B
+67 -- C
+68 -- D
+69 -- E
+70 -- F
+71 -- G
+72 -- H
+73 -- I
+74 -- J
+75 -- K
+76 -- L
+77 -- M
+78 -- N
+79 -- O
+80 -- P
+81 -- Q
+82 -- R
+83 -- S
+84 -- T
+85 -- U
+86 -- V
+87 -- W
+88 -- X
+89 -- Y
+90 -- Z
+91 -- Open Bracket
+92 -- Back Slash
+93 -- Close Bracket
+96 -- NumPad-0
+97 -- NumPad-1
+98 -- NumPad-2
+99 -- NumPad-3
+100 -- NumPad-4
+101 -- NumPad-5
+102 -- NumPad-6
+103 -- NumPad-7
+104 -- NumPad-8
+105 -- NumPad-9
+106 -- NumPad *
+107 -- NumPad +
+108 -- NumPad ,
+109 -- NumPad -
+110 -- NumPad .
+111 -- NumPad /
+112 -- F1
+113 -- F2
+114 -- F3
+115 -- F4
+116 -- F5
+117 -- F6
+118 -- F7
+119 -- F8
+120 -- F9
+121 -- F10
+122 -- F11
+123 -- F12
+127 -- Delete
+128 -- Dead Grave
+129 -- Dead Acute
+130 -- Dead Circumflex
+131 -- Dead Tilde
+132 -- Dead Macron
+133 -- Dead Breve
+134 -- Dead Above Dot
+135 -- Dead Diaeresis
+136 -- Dead Above Ring
+137 -- Dead Double Acute
+138 -- Dead Caron
+139 -- Dead Cedilla
+140 -- Dead Ogonek
+141 -- Dead Iota
+142 -- Dead Voiced Sound
+143 -- Dead Semivoiced Sound
+144 -- Num Lock
+145 -- Scroll Lock
+150 -- Ampersand
+151 -- Asterisk
+152 -- Double Quote
+153 -- Less
+154 -- Print Screen
+155 -- Insert
+156 -- Help
+157 -- Meta
+160 -- Greater
+161 -- Left Brace
+162 -- Right Brace
+192 -- Back Quote
+222 -- Quote
+224 -- Up
+225 -- Down
+226 -- Left
+227 -- Right
+240 -- Alphanumeric
+241 -- Katakana
+242 -- Hiragana
+243 -- Full-Width
+244 -- Half-Width
+245 -- Roman Characters
+256 -- All Candidates
+257 -- Previous Candidate
+258 -- Code Input
+259 -- Japanese Katakana
+260 -- Japanese Hiragana
+261 -- Japanese Roman
+262 -- Kana Lock
+263 -- Input Method On/Off
+512 -- At
+513 -- Colon
+514 -- Circumflex
+515 -- Dollar
+516 -- Euro
+517 -- Exclamation Mark
+518 -- Inverted Exclamation Mark
+519 -- Left Parenthesis
+520 -- Number Sign
+521 -- Plus
+522 -- Right Parenthesis
+523 -- Underscore
+524 -- Windows
+525 -- Context Menu
+61440 -- F13
+61441 -- F14
+61442 -- F15
+61443 -- F16
+61444 -- F17
+61445 -- F18
+61446 -- F19
+61447 -- F20
+61448 -- F21
+61449 -- F22
+61450 -- F23
+61451 -- F24
+65312 -- Compose
+65368 -- Begin
+65406 -- Alt Graph
+65480 -- Stop
+65481 -- Again
+65482 -- Props
+65483 -- Undo
+65485 -- Copy
+65487 -- Paste
+65488 -- Find
+65489 -- Cut
+*/
+
+public class KeyboardWitness implements KeyListener {
+	
+	private List<Integer> keysPressed = new ArrayList<Integer>();
+	private List<Integer> pendingKeysTyped = new ArrayList<Integer>();
+	private List<Integer> keysTyped = new ArrayList<Integer>();
+	
+	@Override
+	public void keyTyped(KeyEvent e) {
+		
+	}
+
+	@Override
+	public void keyPressed(KeyEvent e) {
+		
+		if (!keysPressed.contains(e.getKeyCode())) {
+			
+			keysPressed.add(e.getKeyCode());
+			
+			if (!pendingKeysTyped.contains(e.getKeyCode())) {
+				
+				pendingKeysTyped.add(e.getKeyCode());
+				
+			}
+			
+		}
+		
+	}
+
+	@Override
+	public void keyReleased(KeyEvent e) {
+		
+		keysPressed.removeAll(Collections.singleton(e.getKeyCode()));
+		
+	}
+	
+	public void purgeTypedKeys() {
+		
+		keysTyped = pendingKeysTyped;
+		pendingKeysTyped = new ArrayList<Integer>();
+		
+	}
+	
+	public List<Integer> getHeldKeys() {
+		
+		return keysPressed;
+		
+	}
+	
+	public List<Integer> getTypedKeys() {
+		
+		List<Integer> keys = new ArrayList<Integer>();
+		
+		for (int key : keysTyped) {
+			
+			keys.add(key);
+			
+		}
+		
+		return keys;
+		
+	}
+	
+	public List<ButtonType> getHeldButtons() {
+		
+		List<ButtonType> buttons = new ArrayList<ButtonType>();
+		
+		for (int key : keysPressed) {
+			
+			try {
+				
+				buttons.add(ControlHolder.getButton(key));
+				
+			} catch (IllegalArgumentException e) {
+				
+				continue;
+				
+			}			
+		
+		}
+		
+		return buttons;
+		
+	}
+	
+	public List<ButtonType> getTypedButtons() {
+		
+		List<ButtonType> buttons = new ArrayList<ButtonType>();
+		
+		for (int key : keysTyped) {
+			
+			try {
+				
+				buttons.add(ControlHolder.getButton(key));
+				
+			} catch (IllegalArgumentException e) {
+				
+				continue;
+				
+			}			
+		
+		}
+		
+		return buttons;
+		
+	}
+
+	public boolean isButtonHeld(ButtonType button) {
+		
+		return keysPressed.contains(ControlHolder.getKey(button));
+		
+	}
+	
+	public boolean isButtonTyped(ButtonType button) {
+		
+		return keysTyped.contains(ControlHolder.getKey(button));
+		
+	}
+	
+}
+
+------------------------------------------------------------
+src\me\Josh123likeme\LORBase\InputListener\MouseWitness.java
+------------------------------------------------------------
+package me.Josh123likeme.LORBase.InputListener;
+
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.awt.event.MouseMotionListener;
+
+public class MouseWitness implements MouseListener, MouseMotionListener {
+
+	private int mouseX, mouseY;
+	private boolean dragging;
+	
+	private boolean leftHeld;
+	private boolean pendingLeftClicked;
+	private boolean leftClicked;
+	
+	private boolean rightHeld;
+	private boolean pendingRightClicked;
+	private boolean rightClicked;
+	
+	@Override
+	public void mouseDragged(MouseEvent e) {
+		
+		dragging = true;
+		
+		mouseX = e.getX();
+		mouseY = e.getY();
+		
+	}
+
+	@Override
+	public void mouseMoved(MouseEvent e) {
+		
+		dragging = false;
+		
+		mouseX = e.getX();
+		mouseY = e.getY();
+		
+	}
+
+	@Override
+	public void mouseClicked(MouseEvent e) {
+
+	}
+
+	@Override
+	public void mousePressed(MouseEvent e) {
+			
+	}
+
+	@Override
+	public void mouseReleased(MouseEvent e) {
+		dragging = false;	
+			
+		if (e.getButton() == MouseEvent.BUTTON1) pendingLeftClicked = true;
+		else if (e.getButton() == MouseEvent.BUTTON3) pendingRightClicked = true;
+		
+	}
+
+	@Override
+	public void mouseEntered(MouseEvent e) {
+		
+	}
+
+	@Override
+	public void mouseExited(MouseEvent e) {
+		
+	}
+
+	public int getMouseX() {
+		
+		return mouseX;
+		
+	}
+	
+	public int getMouseY() {
+		
+		return mouseY;
+		
+	}
+	
+	public boolean isDragging() {
+		
+		return dragging;
+		
+	}
+	
+	public void purgeClickedButtons() {
+		
+		leftClicked = pendingLeftClicked;
+		pendingLeftClicked = false;
+		
+		rightClicked = pendingRightClicked;
+		pendingRightClicked = false;
+		
+	}
+	
+	public boolean isLeftHeld() {
+		
+		return leftHeld;
+		
+	}
+	
+	public boolean isLeftClicked() {
+		
+		return leftClicked;
+		
+	}
+	
+	public boolean isRightHeld() {
+		
+		return rightHeld;
+		
+	}
+	
+	public boolean isRightClicked() {
+		
+		return rightClicked;
+		
+	}
+	
+}
+
+----------------------------------------------------------
+src\me\Josh123likeme\LORBase\ItemHolder\COLOUR_SQUARE.java
+----------------------------------------------------------
+package me.Josh123likeme.LORBase.ItemHolder;
+
+import java.awt.Color;
+import java.awt.image.BufferedImage;
+
+public class COLOUR_SQUARE extends Item {
+	
+	public COLOUR_SQUARE(Color colour) {
+		
+		displayName = "Colour Square";
+		description.add("A coloured square used for testing");
+		
+		String red = Integer.toHexString(colour.getRed());
+		String green = Integer.toHexString(colour.getGreen());
+		String blue = Integer.toHexString(colour.getBlue());
+
+		if (red.length() == 1) red = "0" + red;
+		if (green.length() == 1) green = "0" + green;
+		if (blue.length() == 1) blue = "0" + blue;
+
+		String hexColor = "�" + red + green + blue;
+		
+		description.add("Colour: " + hexColor + " " + colour.getRed() + " " + colour.getGreen() + " " + colour.getBlue());
+		
+		defaultTexture = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
+		
+		defaultTexture.setRGB(0, 0, colour.getRGB());
+		
+	}
+	
+}
+
+----------------------------------------------------
+src\me\Josh123likeme\LORBase\ItemHolder\Essence.java
+----------------------------------------------------
+package me.Josh123likeme.LORBase.ItemHolder;
+
+public enum Essence {
+
+	//vial essentia
+	
+	SANA,
+	
+	//other essentia
+	
+	REPARARE,
+	COMPRESSE,
+	
+	;
+	
+}
+
+------------------------------------------------------
+src\me\Josh123likeme\LORBase\ItemHolder\Inventory.java
+------------------------------------------------------
+package me.Josh123likeme.LORBase.ItemHolder;
+
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.Graphics;
+
+import me.Josh123likeme.LORBase.FrameData;
+import me.Josh123likeme.LORBase.Main;
+import me.Josh123likeme.LORBase.EntityHolder.Entity;
+import me.Josh123likeme.LORBase.EntityHolder.ITEM_ENTITY;
+import me.Josh123likeme.LORBase.InputListener.MouseWitness;
+import me.Josh123likeme.LORBase.UI.Text;
+import me.Josh123likeme.LORBase.UI.UIParams;
+
+public class Inventory {
+
+	public final int width;
+	public final int height;
+	
+	private Item[] items;
+	private Item held;
+	
+	private double UISize = 0.5d;
+	
+	public Inventory(int width, int height) {
+		
+		this.width = width;
+		this.height = height;
+		
+		items = new Item[width * height];
+		
+	}
+	
+	public Inventory(int width, int height, Item[] items) {
+		
+		this.width = width;
+		this.height = height;
+		
+		this.items = new Item[width * height];
+		
+		if (width * height > items.length) throw new IndexOutOfBoundsException("These items will not fit within the inventory");
+		
+		for (int i = 0; i < items.length; i++) {
+			
+			this.items[i] = items[i];
+			
+		}
+		
+	}
+	
+	public void render(Graphics g) {
+		
+		FrameData frameData = Main.game.frameData;
+		MouseWitness mouseWitness = Main.game.mouseWitness;
+		int cellSize = frameData.Width / width < frameData.Height / height ? frameData.Width / width : frameData.Height / height;
+		
+		cellSize *= UISize;
+		
+		int offsetX = frameData.Width / 2 - cellSize * width / 2;
+		int offsetY = frameData.Height / 2 - cellSize * height / 2;
+		
+		g.setColor(new Color(146, 146, 146));
+		
+	    g.fillRect(offsetX, offsetY,
+	    		(int) (width * cellSize + cellSize * 0.1),
+	    		(int) (height * cellSize + cellSize * 0.1));
+		
+		g.setColor(new Color(162, 162, 162));
+		g.setColor(new Color(200, 200, 200));
+		
+		for (int y = 0; y < height; y++) {
+			
+			for (int x = 0; x < width; x++) {
+				
+				g.fillRect((int) (offsetX + x * cellSize + cellSize * 0.1),
+						(int) (offsetY + y * cellSize + cellSize * 0.1),
+						(int) (cellSize * 0.9), (int) (cellSize * 0.9));
+				
+				int index = y * width + x;
+				
+				if (items[index] != null) {
+					
+					g.drawImage(items[index].getTexture(), 
+							(int) (offsetX + x * cellSize + cellSize * 0.1),
+							(int) (offsetY + y * cellSize + cellSize * 0.1),
+							(int) (cellSize * 0.9), (int) (cellSize * 0.9), null);
+					
+				}
+				
+			}
+			
+		}
+		
+		
+		
+		if (held != null) {
+			
+			g.drawImage(held.getTexture(), 
+					mouseWitness.getMouseX() - (int) (cellSize * 0.45), 
+					mouseWitness.getMouseY() - (int) (cellSize * 0.45),
+					(int) (cellSize * 0.9), (int) (cellSize * 0.9), null);
+			
+		}
+		
+		int slot = getSlot(mouseWitness.getMouseX(), mouseWitness.getMouseY());
+		
+		if (held == null && slot != -1 && items[slot] != null) {
+			
+			int x = mouseWitness.getMouseX();
+			int y = mouseWitness.getMouseY();
+			
+			int relWidth = (int) (frameData.Width * 0.2);
+			
+			int textHeight = 20;
+
+			int numberOfLines = Text.predictLines(g, items[slot].getDescription(), 
+					x + 10 + (int) (relWidth * 0.05) + 10, y + 10 + (int) (relWidth * 0.05) + 10, 
+					relWidth - (int) (relWidth * 0.1) - 20, textHeight);
+			
+			g.setColor(new Color(21, 25, 71));
+			
+			g.fillRect(x + 10, y + 10, relWidth, textHeight * (numberOfLines + 4) + 40);
+			
+			g.setColor(new Color(58, 65, 165));
+			
+			g.fillRect(x + 10 + (int) (relWidth * 0.05), y + 10 + (int) (relWidth * 0.05), 
+					relWidth - (int) (relWidth * 0.1), (textHeight * (numberOfLines + 4)) - (int) (relWidth * 0.1) + 40);
+			
+			g.setColor(new Color(255, 255, 255));
+			
+			g.setFont(new Font(g.getFont().getFontName(), Font.PLAIN, 40)); 
+			
+			g.drawString(items[slot].getDisplayName(), 
+					x + 10 + (int) (relWidth * 0.05) + 10, y + 10 + (int) (relWidth * 0.05) + 40);
+			
+			Text.writeLines(g, items[slot].getDescription(), 
+					x + 10 + (int) (relWidth * 0.05) + 10, y + 10 + (int) (relWidth * 0.05) + 10 + 40, 
+					relWidth - (int) (relWidth * 0.1) - 20, textHeight);
+			
+		}
+		
+	}
+	
+	public void updateInventoryUI() {
+		
+		MouseWitness mouseWitness = Main.game.mouseWitness;
+		
+		if (mouseWitness.isLeftClicked()) {
+			
+			int slot = getSlot(mouseWitness.getMouseX(), mouseWitness.getMouseY());
+			
+			if (slot != -1) {
+				
+				if (held == null) {
+					
+					held = items[slot];
+					items[slot] = null;
+					
+				}
+				else if (held != null && items[slot] == null) {
+					
+					items[slot] = held;
+					held = null;
+					
+				}
+				else if (held != null && items[slot] != null) {
+					
+					Item temp = held;
+					held = items[slot];
+					items[slot] = temp;
+					
+				}
+				
+			}
+			else if (slot == -1) {
+				
+				if (Main.game.save.inWorld() && held != null) {
+					
+					Entity droppedItem = new ITEM_ENTITY(Main.game.save.world, 
+							Main.game.save.player.getPosition(), 90, held, 3d);
+					
+					held = null;
+					
+					Main.game.save.world.addEntity(droppedItem);
+					
+				}
+	
+			}
+			
+		}
+		
+	}
+	
+	private int getSlot(int x, int y) {
+		
+		FrameData frameData = Main.game.frameData;
+		
+		int cellSize = frameData.Width / width < frameData.Height / height ? frameData.Width / width : frameData.Height / height;
+		
+		cellSize *= UISize;
+		
+		int offsetX = frameData.Width / 2 - cellSize * width / 2;
+		int offsetY = frameData.Height / 2 - cellSize * height / 2;
+		
+		if (((x - offsetX) < cellSize * width && x - offsetX >= 0) &&
+			((y - offsetY) < cellSize * height && y - offsetY >= 0)) {
+			
+			int cellX = (x - offsetX) / cellSize;
+			int cellY = (y - offsetY) / cellSize;
+			
+			return cellY * width + cellX;
+			
+		}
+		
+		return -1;
+		
+	}
+	
+	public void closeInventory() {
+		
+		if (held != null) {
+			
+			addItem(held);
+			
+			held = null;
+			
+		}
+		
+	}
+	
+	public Item[] getItems() {
+		
+		return items;
+		
+	}
+	
+	public Item getHeld() {
+		
+		return held;
+		
+	}
+	
+	public void setHeld(Item held) {
+		
+		this.held = held;
+		
+	}
+	
+	public void addItem(Item item) throws IndexOutOfBoundsException {
+		
+		for (int i = width * (height - 1); i < width * height; i++) {
+			
+			if (items[i] == null) {
+				
+				items[i] = item;
+				
+				return;
+				
+			}
+			
+		}
+		
+		for (int i = 0; i < width * (height - 1); i++) {
+			
+			if (items[i] == null) {
+				
+				items[i] = item;
+				
+				return;
+				
+			}
+			
+		}
+		
+		throw new IndexOutOfBoundsException("there is no space for the item in the inventory");
+		
+	}
+	
+	public void addItem(Item item, int index) throws IndexOutOfBoundsException {
+		
+		if (items[index] != null) throw new IndexOutOfBoundsException("there is already an item there");
+		
+		items[index] = item;
+		
+	}
+	
+	public boolean isFull() {
+		
+		for (int i = 0; i < items.length; i++) {
+			
+			if (items[i] == null) return false;
+			
+		}
+		
+		return true;
+		
+	}
+	
+	public void updateParameters(UIParams parameters) {
+		
+		UISize = parameters.getParameter("UISIZE");
+		
+	}
+	
+}
+
+-------------------------------------------------------
+src\me\Josh123likeme\LORBase\ItemHolder\IStackable.java
+-------------------------------------------------------
+package me.Josh123likeme.LORBase.ItemHolder;
+
+public interface IStackable {
+
+	public int getStackSize();
+	
+	public int getMaxStackSize();
+	
+	public void addOne();
+	
+}
+
+-------------------------------------------------
+src\me\Josh123likeme\LORBase\ItemHolder\Item.java
+-------------------------------------------------
+package me.Josh123likeme.LORBase.ItemHolder;
+
+import java.awt.image.BufferedImage;
+import java.util.ArrayList;
+import java.util.List;
+
+import assets.Assets;
+import me.Josh123likeme.LORBase.TUID;
+
+public abstract class Item {
+	
+	protected String tuid = TUID.generateRandomTimeStampedId();
+	
+	protected String displayName;
+	protected List<String> description = new ArrayList<String>();
+	
+	protected BufferedImage defaultTexture;
+	
+	/**
+	 * used for accessing the texture
+	 * @return
+	 */
+	public BufferedImage getTexture() {
+		
+		if (defaultTexture == null) loadTextures();
+		
+		return defaultTexture;
+		
+	}
+	
+	/**
+	 * loads textures into memory
+	 */
+	protected void loadTextures() {
+		
+		 defaultTexture = Assets.LoadTextureFromAssets("textures/item/" + this.getClass().getSimpleName() + ".png");
+		
+	}
+	
+	public String getDisplayName() {
+		
+		return displayName;
+		
+	}
+	
+	public String[] getDescription() {
+		
+		String[] content = new String[description.size()];
+		
+		for (int i = 0; i < description.size(); i++) {
+			
+			content[i] = description.get(i);
+			
+		}
+		
+		return content;
+		
+	}
+	
+}
+
+---------------------------------------------------------------
+src\me\Josh123likeme\LORBase\ItemHolder\TELEPORTATION_CORE.java
+---------------------------------------------------------------
+package me.Josh123likeme.LORBase.ItemHolder;
+
+public class TELEPORTATION_CORE extends Item {
+
+	public TELEPORTATION_CORE() {
+		
+		displayName = "Teleportation Core";
+		
+		description.add("A mysterious object from the heart of a gargoyle");
+		
+	}
+	
+}
+
+-------------------------------------------------
+src\me\Josh123likeme\LORBase\ItemHolder\VIAL.java
+-------------------------------------------------
+package me.Josh123likeme.LORBase.ItemHolder;
+
+public class VIAL extends Item {
+	
+	private static final int maxCompressionLevel = 10;
+	int compressionLevel;
+	double maxCapacity;
+	
+	Essence essence;
+	double essenceVolume;
+	
+	public VIAL() {
+		
+		displayName = "Vial";
+		description.add("A small glass ampoule used for harnessing compressed essentia");
+		description.add("this vial is empty");
+		
+	}
+	
+	public void addEssence(int amount) {
+		
+		if (essenceVolume + amount > maxCapacity) throw new IllegalArgumentException("cannot increase amount of essence above maximum");
+		
+		essenceVolume += amount;
+		
+	}
+	
+	public void addEssence(Essence essence, int amount) {
+		
+		if (this.essence != null) {
+			
+			if (essence != this.essence) throw new IllegalArgumentException("you can only add essence of the same type");
+			
+		}
+		
+		if (essenceVolume + amount > maxCapacity) throw new IllegalArgumentException("cannot increase amount of essence above maximum");
+		
+		essenceVolume += amount;
+		
+	}
+	
+	public void upgradeCompressionLevel() {
+		
+		if (compressionLevel + 1 > maxCompressionLevel) throw new IllegalArgumentException("cannot increase compression level above maximum");
+		
+		compressionLevel++;
+		
+		maxCapacity = getCapacityAtLevel(compressionLevel);
+		
+	}
+
+	public int getCapacityAtLevel(int level) {
+		
+		if (level <= 0) throw new IllegalArgumentException("level must be positive");
+		
+		return (int) (level >= 10 ? 100 : 0.5 * (level + 3) * (level + 4));
+		
+	}
+	
+}
+
+---------------------------------------------------------
+src\me\Josh123likeme\LORBase\ItemHolder\ZOMBIE_FLESH.java
+---------------------------------------------------------
+package me.Josh123likeme.LORBase.ItemHolder;
+
+public class ZOMBIE_FLESH extends Item implements IStackable {
+
+	private final int maxStackSize = 20;
+	private int stackSize;
+	
+	public ZOMBIE_FLESH() {
+		
+		displayName = "Zombie Flesh";
+		
+		description.add("A piece of flesh from a zombie");
+		
+	}
+	
+	@Override
+	public int getStackSize() {
+		
+		return stackSize;
+	}
+
+	@Override
+	public int getMaxStackSize() {
+		
+		return maxStackSize;
+		
+	}
+
+	@Override
+	public void addOne() {
+		
+		if (stackSize + 1 > maxStackSize) throw new IllegalArgumentException("The stack is already at max capacity");
+		
+		stackSize++;
+		
+	}
+	
+}
+
+--------------------------------------------------------------
+src\me\Josh123likeme\LORBase\ParticleHolder\DAMAGE_NUMBER.java
+--------------------------------------------------------------
+package me.Josh123likeme.LORBase.ParticleHolder;
+
+import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.image.BufferedImage;
+
+import me.Josh123likeme.LORBase.Types.Vector2D;
+import me.Josh123likeme.LORBase.UI.Text;
+
+public class DAMAGE_NUMBER extends Particle {
+
+	String content;
+	
+	public DAMAGE_NUMBER(Vector2D pos, double damage) {
+		
+		expiryTime = System.nanoTime() + 1000000000L;
+		this.pos = pos.clone();
+		
+		content = generateRandomColour() + " " + (double) Math.round(damage * 10) / 10;
+		
+		BufferedImage temp = new BufferedImage(20, 20, BufferedImage.TYPE_INT_ARGB);
+		Graphics graphics = temp.getGraphics();
+		graphics.setFont(new Font(graphics.getFont().getFontName(), Font.PLAIN, 20)); 
+		
+		int width = graphics.getFontMetrics().stringWidth(Double.toString(damage));
+		
+		defaultTexture = new BufferedImage(width, 20, BufferedImage.TYPE_INT_ARGB);
+		graphics = defaultTexture.getGraphics();
+		graphics.setFont(new Font(graphics.getFont().getFontName(), Font.PLAIN, 20)); 
+		
+		Text.writeText(graphics, content, 0, 0, 20);
+		
+	}
+	
+	private String generateRandomColour() {
+		
+		String green = Integer.toHexString(random.nextInt(255));
+		
+		if (green.length() == 1) green = "0" + green;
+
+		return "�FF" + green + "00";
+		
+	}
+	
+	
+	@Override
+	public BufferedImage getTexture() {
+		
+		return defaultTexture;
+		
+	}
+	
+
+	@Override
+	public double getSize() {
+		
+		return 0.5d;
+	}
+	
+}
+
+----------------------------------------------------------
+src\me\Josh123likeme\LORBase\ParticleHolder\INDICATOR.java
+----------------------------------------------------------
+package me.Josh123likeme.LORBase.ParticleHolder;
+
+import java.awt.image.BufferedImage;
+
+import me.Josh123likeme.LORBase.Types.Vector2D;
+
+public class INDICATOR extends Particle {
+
+	public INDICATOR(Vector2D pos) {
+		
+		this.pos = pos;
+		
+		defaultTexture = new BufferedImage(16, 16, BufferedImage.TYPE_INT_ARGB);
+		
+		for (int y = 0; y < defaultTexture.getHeight(); y++) {
+			
+			for (int x = 0; x < defaultTexture.getWidth(); x++) {
+				
+				defaultTexture.setRGB(x, y, 255 << 24 | 30 << 16 | 57 << 8 | 218);
+				
+			}
+			
+		}
+		
+		
+		
+	}
+	
+	@Override
+	public double getSize() {
+		// TODO Auto-generated method stub
+		return 0.1;
+	}
+
+	
+	
+}
+
+---------------------------------------------------------
+src\me\Josh123likeme\LORBase\ParticleHolder\Particle.java
+---------------------------------------------------------
+package me.Josh123likeme.LORBase.ParticleHolder;
+
+import java.awt.image.BufferedImage;
+import java.util.Random;
+
+import assets.Assets;
+import me.Josh123likeme.LORBase.Types.Vector2D;
+
+public abstract class Particle {
+
+	protected static Random random = new Random();
+	
+	protected BufferedImage defaultTexture;
+	
+	Vector2D pos;
+	long expiryTime; //in nano seconds
+	
+	/**
+	 * used for accessing the texture
+	 * @return
+	 */
+	public BufferedImage getTexture() {
+		
+		if (defaultTexture == null) loadTextures();
+		
+		return defaultTexture;
+		
+	}
+	
+	/**
+	 * loads textures into memory
+	 */
+	protected void loadTextures() {
+		
+		 defaultTexture = Assets.LoadTextureFromAssets("textures/particle/" + this.getClass().getSimpleName() + ".png");
+		
+	}
+	
+	public boolean isAlive() {
+		
+		if (System.nanoTime() > expiryTime) return false;
+		return true;
+		
+	}
+	
+	public Vector2D getPosition() {
+		
+		return pos;
+		
+	}
+	
+	public abstract double getSize();
+	
+}
+
+------------------------------------------------
+src\me\Josh123likeme\LORBase\Types\Cardinal.java
+------------------------------------------------
+package me.Josh123likeme.LORBase.Types;
+
+public enum Cardinal {
+
+	NORTH,
+	EAST,
+	SOUTH,
+	WEST,
+	
+	;
+	
+}
+
+--------------------------------------------
+src\me\Josh123likeme\LORBase\Types\Pair.java
+--------------------------------------------
+package me.Josh123likeme.LORBase.Types;
+
+public class Pair<T, U> {
+
+	T first;
+	U last;
+	
+	public Pair(T first, U last) {
+		
+		this.first = first;
+		this.last = last;
+		
+	}
+	
+	public T getFirst() {
+		
+		return first;
+		
+	}
+	public U getLast() {
+		
+		return last;
+		
+	}
+	
+}
+
+------------------------------------------------
+src\me\Josh123likeme\LORBase\Types\Vector2D.java
+------------------------------------------------
+package me.Josh123likeme.LORBase.Types;
+
+import java.util.Random;
+
+public class Vector2D implements Cloneable {
+	
+	private static Random random = new Random();
+	
+	public double X, Y;
+	
+	public Vector2D() { }
+	
+	public Vector2D(double angle) {
+		
+		X = Math.cos(Math.toRadians(angle));
+		Y = Math.sin(Math.toRadians(angle));
+		
+	}
+	
+	public Vector2D(double x, double y) {
+		
+		X = x;
+		Y = y;
+		
+	}
+	
+	public double length() {
+		
+		return distanceTo(0, 0);
+		
+	}
+	
+	public Vector2D normalise() {
+		
+		double mag = Math.sqrt(X*X + Y*Y);
+		
+		if (mag == 0) return this;
+		
+		X = X / mag;
+		Y = Y / mag;
+		
+		return this;
+		
+	}
+	
+	public double distanceTo(Vector2D vec) {
+		
+		return Math.sqrt((X - vec.X) * (X - vec.X) + (Y - vec.Y) * (Y - vec.Y));
+		
+	}
+	
+	public double distanceTo(double x, double y) {
+		
+		return Math.sqrt((X - x) * (X - x) + (Y - y) * (Y - y));
+		
+	}
+	
+	public double directionTo(Vector2D vec) {
+		
+		double dx = vec.X - X;
+		double dy = vec.Y - Y;
+		
+		if (dx > 0 && dy > 0) return Math.toDegrees(Math.atan(dy / dx));
+		if (dx < 0 && dy > 0) return 90 + Math.toDegrees(Math.atan(-dx / dy));
+		if (dx < 0 && dy < 0) return 180 + Math.toDegrees(Math.atan(-dy / -dx));
+		if (dx > 0 && dy < 0) return 270 + Math.toDegrees(Math.atan(dx / -dy));
+		
+		if (dx > 0 && dy == 0) return 0;
+		if (dx == 0 && dy > 0) return 90;
+		if (dx < 0 && dy == 0) return 180;
+		if (dx == 0 && dy < 0) return 270;
+		
+		return 0d;
+		
+	}
+	
+	public double directionTo(double x, double y) {
+		
+		double dx = x - X;
+		double dy = x - Y;
+		
+		if (dx > 0 && dy > 0) return Math.toDegrees(Math.atan(dy / dx));
+		if (dx < 0 && dy > 0) return 90 + Math.toDegrees(Math.atan(-dx / dy));
+		if (dx < 0 && dy < 0) return 180 + Math.toDegrees(Math.atan(-dy / -dx));
+		if (dx > 0 && dy < 0) return 270 + Math.toDegrees(Math.atan(dx / -dy));
+		
+		if (dx > 0 && dy == 0) return 0;
+		if (dx == 0 && dy > 0) return 90;
+		if (dx < 0 && dy == 0) return 180;
+		if (dx == 0 && dy < 0) return 270;
+		
+		return 0d;
+		
+	}
+	
+	public double angleBetween(Vector2D vec) {
+		
+		return Math.toDegrees(Math.acos((dot(vec)) / (length() * vec.length())));
+		
+	}
+	
+	public Vector2D set(double x, double y) {
+		
+		X = x;
+		Y = y;
+		
+		return this;
+		
+	}
+	
+	public Vector2D add(Vector2D vec) {
+		
+		X += vec.X;
+		Y += vec.Y;
+		
+		return this;
+		
+	}
+	
+	public Vector2D subtract(Vector2D vec) {
+		
+		X -= vec.X;
+		Y -= vec.Y;
+		
+		return this;
+		
+	}
+	
+	public Vector2D scale(double scale) {
+		
+		X *= scale;
+		Y *= scale;
+		
+		return this;
+		
+	}
+	
+	public double dot(Vector2D vec) {
+		
+		return X * vec.X + Y * vec.Y;
+		
+	}
+	
+	public Vector2D fluctuate(double maxChange) {
+		
+		X += random.nextDouble() * maxChange * 2 - maxChange;
+		Y += random.nextDouble() * maxChange * 2 - maxChange;
+		
+		return this;
+		
+	}
+	
+	@Override
+	public Vector2D clone() {
+		
+		return new Vector2D(X, Y);
+		
+	}
+
+}
+
+-------------------------------------------
+src\me\Josh123likeme\LORBase\UI\Button.java
+-------------------------------------------
+package me.Josh123likeme.LORBase.UI;
+
+import java.awt.image.BufferedImage;
+
+class Button {
+
+	private String id;
+	
+	private String text;
+	private BufferedImage image;
+	private String description;
+	
+	private double posX;
+	private double posY;
+	private double width;
+	private double height;
+	
+	public final double borderSize = 0.1d;
+	
+	public Button(String id, String text, BufferedImage image, String description, double x, double y, double sizeX, double sizeY) {
+		
+		this.id = id;
+		
+		this.text = text;
+		this.image = image;
+		this.description = description;
+		
+		this.posX = x;
+		this.posY = y;
+		this.width = sizeX;
+		this.height = sizeY;
+		
+	}
+
+	public boolean isTextButton() {
+		
+		if (text != null && image == null) return true;
+		if (text == null && image != null) return false;
+		
+		throw new IllegalStateException("For some reason the button is neither a text button or an image button");
+		
+	}
+	
+	public boolean hasDescription() {
+		
+		if (description != null) return true;
+		
+		return false;
+		
+	}
+	
+	public String getId() {
+		
+		return id;
+		
+	}
+	
+	public String getText() {
+		
+		return text;
+		
+	}
+	
+	void setText(String text) {
+		
+		this.text = text;
+		
+	}
+	
+	public BufferedImage getImage() {
+		
+		return image;
+		
+	}
+	
+	void setImage(BufferedImage image) {
+		
+		this.image = image;
+		
+	}
+	
+	public String getDescription() {
+		
+		return description;
+		
+	}
+	
+	void setDescription(String description) {
+		
+		this.description = description;
+		
+	}
+	
+	public double getX() {
+		
+		return posX;
+		
+	}
+	
+	public double getY() {
+		
+		return posY;
+		
+	}
+	
+	public double getWidth() {
+		
+		return width;
+		
+	}
+	
+	public double getHeight() {
+		
+		return height;
+		
+	}
+	
+}
+
+--------------------------------------------
+src\me\Josh123likeme\LORBase\UI\Element.java
+--------------------------------------------
+package me.Josh123likeme.LORBase.UI;
+
+import java.awt.image.BufferedImage;
+
+class Element {
+
+	private String id;
+	
+	private String text;
+	private BufferedImage image;
+	
+	private double posX;
+	private double posY;
+	private double width;
+	private double height;
+	
+	public Element(String id, String text, BufferedImage image, double x, double y, double sizeX, double sizeY) {
+		
+		this.id = id;
+		
+		this.text = text;
+		this.image = image;
+		
+		this.posX = x;
+		this.posY = y;
+		this.width = sizeX;
+		this.height = sizeY;
+		
+	}
+	
+	public boolean isTextElement() {
+		
+		if (text != null && image == null) return true;
+		if (text == null && image != null) return false;
+		
+		throw new IllegalStateException("For some reason the element is neither a text element or an image element");
+		
+	}
+	
+	public String getId() {
+		
+		return id;
+		
+	}
+	
+	public String getText() {
+		
+		return text;
+		
+	}
+	
+	void setText(String text) {
+		
+		this.text = text;
+		
+	}
+	
+	public BufferedImage getImage() {
+		
+		return image;
+		
+	}
+	
+	void setImage(BufferedImage image) {
+		
+		this.image = image;
+		
+	}
+	
+	public double getX() {
+		
+		return posX;
+		
+	}
+	
+	public double getY() {
+		
+		return posY;
+		
+	}
+	
+	public double getWidth() {
+		
+		return width;
+		
+	}
+	
+	public double getHeight() {
+		
+		return height;
+		
+	}
+	
+}
+
+-----------------------------------------
+src\me\Josh123likeme\LORBase\UI\Menu.java
+-----------------------------------------
+package me.Josh123likeme.LORBase.UI;
+
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.image.BufferedImage;
+import java.util.ArrayList;
+import java.util.List;
+
+import me.Josh123likeme.LORBase.Main;
+import me.Josh123likeme.LORBase.SettingsHolder;
+
+public class Menu {
+	
+	private List<Button> buttons = new ArrayList<Button>();
+	private List<Element> elements = new ArrayList<Element>();
+	
+	public void createButton(String id, String text, double x, double y, double sizeX, double sizeY) {
+		
+		buttons.add(new Button(id, text, null, null, x, y, sizeX, sizeY));
+		
+	}
+	
+	public void createButton(String id, BufferedImage image, double x, double y, double sizeX, double sizeY) {
+		
+		buttons.add(new Button(id, null, image, null, x, y, sizeX, sizeY));
+		
+	}
+
+	public void createButton(String id, String text, String description, double x, double y, double sizeX, double sizeY) {
+	
+		buttons.add(new Button(id, text, null, description, x, y, sizeX, sizeY));
+	
+	}
+	
+	public void createButton(String id, BufferedImage image, String description, double x, double y, double sizeX, double sizeY) {
+	
+		buttons.add(new Button(id, null, image, description, x, y, sizeX, sizeY));
+	
+	}
+	
+	public void createElement(String id, String text, double x, double y, double sizeX, double sizeY) {
+		
+		elements.add(new Element(id, text, null, x, y, sizeX, sizeY));
+		
+	}
+	
+	public void createElement(String id, BufferedImage image, double x, double y, double sizeX, double sizeY) {
+		
+		elements.add(new Element(id, null, image, x, y, sizeX, sizeY));
+		
+	}
+	
+	public void updateButtonText(String id, String text) {
+		
+		for (Button button : buttons) {
+			
+			if (!button.isTextButton()) continue;
+			
+			if (button.getId().equals(id)) {
+				
+				button.setText(text);
+				
+				return;
+				
+			}
+			
+		}
+		
+	}
+	
+	public void updateButtonImage(String id, BufferedImage image) {
+		
+		for (Button button : buttons) {
+			
+			if (button.isTextButton()) continue;
+			
+			if (button.getId().equals(id)) {
+				
+				button.setImage(image);
+				
+				return;
+				
+			}
+			
+		}
+		
+	}
+	
+	public void updateButtonDescription(String id, String description) {
+		
+		for (Button button : buttons) {
+			
+			if (button.getId().equals(id)) {
+				
+				button.setText(description);
+				
+				return;
+				
+			}
+			
+		}
+		
+	}
+	
+	public void updateElementText(String id, String text) {
+		
+		for (Element element : elements) {
+			
+			if (!element.isTextElement()) continue;
+			
+			if (element.getId().equals(id)) {
+				
+				element.setText(text);
+				
+				return;
+				
+			}
+			
+		}
+		
+	}
+	
+	public void updateElementImage(String id, BufferedImage image) {
+		
+		for (Element element : elements) {
+			
+			if (element.isTextElement()) continue;
+			
+			if (element.getId().equals(id)) {
+				
+				element.setImage(image);
+				
+				return;
+				
+			}
+			
+		}
+		
+	}
+	
+	public void render(Graphics g) {
+		
+		g.setFont(new Font(g.getFont().getFontName(), Font.PLAIN, 20)); 
+		
+		for (Button button : buttons) {
+			
+			int relX = (int) (Main.game.frameData.Width * button.getX());
+			int relY = (int) (Main.game.frameData.Height * button.getY());
+			int relWidth = (int) (Main.game.frameData.Width * button.getWidth());
+			int relHeight = (int) (Main.game.frameData.Height * button.getHeight());
+			
+			if (button.isTextButton()) {
+				
+				g.setColor(new Color(146, 146, 146));
+				
+				g.fillRect(relX, relY, relWidth, relHeight);
+				
+				g.setColor(new Color(162, 162, 162));
+				
+				g.fillRect(relX + (int) (relWidth * button.borderSize),
+					relY + (int) (relHeight * button.borderSize),
+					relWidth - (int) (2 * relWidth * button.borderSize),
+					relHeight - (int) (2 * relHeight * button.borderSize));
+
+				int stringWidth = g.getFontMetrics().stringWidth(button.getText());
+				int stringHeight = g.getFont().getSize();
+				
+				int textHeight = (int) ((double) stringHeight * (double) relWidth / stringWidth);
+				
+				textHeight *= 0.8;
+				
+				g.setFont(new Font(g.getFont().getFontName(), Font.PLAIN, textHeight)); 
+				
+				g.setColor(Color.black);
+				
+				g.drawString(button.getText(),
+						(int) (relX + relWidth * 0.5 - g.getFontMetrics().stringWidth(button.getText()) * 0.5),
+						(int) (relY + relHeight * 0.5 + textHeight * 0.5));
+				
+			}
+			else {
+				
+				g.drawImage(button.getImage(), relX, relY, relWidth, relHeight, null);
+				
+			}	
+			
+		}
+		
+		for (Element element : elements) {
+			
+			int relX = (int) (Main.game.frameData.Width * element.getX());
+			int relY = (int) (Main.game.frameData.Height * element.getY());
+			int relWidth = (int) (Main.game.frameData.Width * element.getWidth());
+			int relHeight = (int) (Main.game.frameData.Height * element.getHeight());
+			
+			if (element.isTextElement()) {
+
+				g.setColor(new Color(146, 146, 146));
+				
+				g.fillRect(relX, relY, relWidth, relHeight);
+				
+				int stringWidth = g.getFontMetrics().stringWidth(element.getText());
+				int stringHeight = g.getFont().getSize();
+				
+				int textHeight = (int) ((double) stringHeight * (double) relWidth / stringWidth);
+				
+				textHeight *= 0.9;
+				
+				g.setFont(new Font(g.getFont().getFontName(), Font.PLAIN, textHeight)); 
+				
+				g.setColor(Color.black);
+				
+				g.drawString(element.getText(),
+						(int) (relX + relWidth * 0.5 - g.getFontMetrics().stringWidth(element.getText()) * 0.5),
+						(int) (relY + relHeight * 0.5 + textHeight * 0.5));
+				
+			}
+			else {
+				
+				g.drawImage(element.getImage(), relX, relY, relWidth, relHeight, null);
+				
+			}	
+			
+		}
+		
+		Button button = getButton(getButtonAt(Main.game.mouseWitness.getMouseX(), Main.game.mouseWitness.getMouseY()));
+		
+		if (button != null && button.hasDescription()) {
+			
+			int relX = (int) (Main.game.frameData.Width * button.getX());
+			int relY = (int) (Main.game.frameData.Height * button.getY());
+			int relWidth = (int) (Main.game.frameData.Width * button.getWidth());
+			int relHeight = (int) (Main.game.frameData.Height * button.getHeight());
+			
+			String description = button.getDescription();
+			
+			int textHeight = (int) (SettingsHolder.descriptionSize * Main.game.frameData.Height);
+			
+			g.setFont(new Font(g.getFont().getFontName(), Font.PLAIN, textHeight)); 
+			
+			g.setColor(Color.black);
+			
+			List<String> lines = new ArrayList<String>();
+			
+			lines.add(new String());
+			
+			int currentLine = 0;
+			
+			for (String word : description.split(" ")) {
+				
+				if (g.getFontMetrics().stringWidth(lines.get(currentLine) + word + " ") < relWidth * 0.8) {
+					
+					lines.set(currentLine, lines.get(currentLine) + word + " ");
+					
+				}
+				else {
+					
+					lines.add(word + " ");
+					
+					currentLine++;
+					
+				}
+				
+			}
+			
+			g.setColor(new Color(146, 146, 146));
+			
+			g.fillRect(relX, relY, relWidth, relHeight);
+			
+			g.setColor(Color.black);
+			
+			for (int i = 0; i < lines.size(); i++) {
+				
+				g.drawString(lines.get(i), 
+						(int) (relX + relWidth * 0.1), 
+						(int) (relY + relHeight / 2 + textHeight * (i - lines.size() / 2)));
+				
+			}
+			
+		}
+		
+	}
+	
+	public String getButtonAt(int x, int y) {
+		
+		for (Button button : buttons) {
+			
+			if (x < button.getX() * Main.game.frameData.Width) continue;
+			if (y < button.getY() * Main.game.frameData.Height) continue;
+			if (x > button.getX() * Main.game.frameData.Width + button.getWidth() * Main.game.frameData.Width) continue;
+			if (y > button.getY() * Main.game.frameData.Height + button.getHeight() * Main.game.frameData.Height) continue;
+			
+			return button.getId();
+			
+		}
+		
+		return null;
+		
+	}
+	
+	private Button getButton(String id) {
+		
+		for (Button button : buttons) {
+			
+			if (button.getId().equals(id)) return button;
+			
+		}
+		
+		return null;
+		
+	}
+	
+}
+
+------------------------------------------------
+src\me\Josh123likeme\LORBase\UI\ProgressBar.java
+------------------------------------------------
+package me.Josh123likeme.LORBase.UI;
+
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.Graphics;
+
+import me.Josh123likeme.LORBase.Main;
+
+public class ProgressBar {
+
+	private Color borderColour;
+	private Color barColour;
+	
+	private double posX;
+	private double posY;
+	private double width;
+	private double height;
+	
+	public final double borderSize = 0.1d;
+	
+	public ProgressBar(Color borderColour, Color barColour, double x, double y, double sizeX, double sizeY) {
+		
+		this.borderColour = borderColour;
+		this.barColour = barColour;
+		
+		this.posX = x;
+		this.posY = y;
+		this.width = sizeX;
+		this.height = sizeY;
+		
+	}
+	
+	public void render(Graphics g, double progress, String text) {
+		
+		int relX = (int) (Main.game.frameData.Width * posX);
+		int relY = (int) (Main.game.frameData.Height * posY);
+		int relWidth = (int) (Main.game.frameData.Width * width);
+		int relHeight = (int) (Main.game.frameData.Height * height);
+		
+		int borderWidth = (int) (relHeight * borderSize);
+		
+		g.setColor(borderColour);
+		
+		g.fillRect(relX, relY, relWidth, relHeight);
+		
+		if (relWidth >= 0) {
+			
+			//bar
+			g.setColor(Color.black);
+			
+			g.fillRect(relX + borderWidth, relY + borderWidth, 
+					relWidth - 2 * borderWidth, relHeight - 2 * borderWidth);
+			
+			if (progress >= 0 && progress <= 1) {
+				
+				g.setColor(barColour);
+				
+				g.fillRect(relX + borderWidth, relY + borderWidth, 
+						(int) ((relWidth - 2 * borderWidth) * progress), relHeight - 2 * borderWidth);
+				
+			}
+			
+			//text
+			g.setColor(Color.white);
+			
+			g.setFont(new Font(g.getFont().getFontName(), Font.PLAIN, (int) (relHeight * 0.8)));
+			
+			int textWidth = g.getFontMetrics().stringWidth(text);
+			
+			Text.writeText(g, text, relX + (relWidth / 2 - textWidth / 2), relY, (int) (relHeight * 0.8));
+			
+		}
+		else {
+			
+			//bar
+			g.setColor(Color.black);
+			
+			g.fillRect(relX - borderWidth, relY + borderWidth, 
+					relWidth + 2 * borderWidth, relHeight - 2 * borderWidth);
+			
+			if (progress >= 0 && progress <= 1) {
+				
+				g.setColor(barColour);
+				
+				g.fillRect(relX - borderWidth, relY + borderWidth, 
+						(int) ((relWidth + 2 * borderWidth) * progress), relHeight - 2 * borderWidth);
+				
+			}
+			
+			//text
+			g.setColor(Color.white);
+			
+			g.setFont(new Font(g.getFont().getFontName(), Font.PLAIN, (int) (relHeight * 0.8)));
+			
+			int textWidth = g.getFontMetrics().stringWidth(text);
+			
+			Text.writeText(g, text, relX + (relWidth / 2 - textWidth / 2), relY, (int) (relHeight * 0.8));
+			
+		}
+
+	}
+	
+}
+
+-----------------------------------------
+src\me\Josh123likeme\LORBase\UI\Text.java
+-----------------------------------------
+package me.Josh123likeme.LORBase.UI;
+
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.Graphics;
+
+public class Text {
+
+	public static void writeText(Graphics g, String text, int x, int y, int textHeight) {
+		
+		g.setFont(new Font(g.getFont().getFontName(), Font.PLAIN, textHeight)); 
+		
+		String[] words = text.split(" ");
+		
+		String newLine = "";
+		
+		for (int i = 0; i < words.length; i++) {
+			
+			String word = words[i];
+
+			//check for colour codes
+			if (word.matches("�[0-9a-fA-F]{6}")) {
+				
+				g.setColor(Color.decode("#" + word.substring(1)));
+				
+				continue;
+				
+			}
+			//check for escaping colour codes
+			else if (word.matches("\\\\�[0-9a-fA-F]{6}")) {
+				
+				word = word.substring(1);
+				
+			}
+			
+			newLine += word + " ";
+			
+		}
+		
+		g.drawString(newLine, x, y + textHeight);
+		
+	}
+	
+	public static void writeLines(Graphics g, String[] text, int x, int y, int width, int textHeight) {
+		
+		int currentLine = -1;
+		
+		g.setFont(new Font(g.getFont().getFontName(), Font.PLAIN, textHeight)); 
+		
+		for (String line : text) {
+			
+			currentLine++;
+			
+			String lineToAdd = "";
+			
+			String[] words = line.split(" ");
+			
+			for (int i = 0; i < words.length; i++) {
+				
+				String word = words[i];
+
+				//check for colour codes
+				if (word.matches("�[0-9a-fA-F]{6}")) {
+					
+					g.setColor(Color.decode("#" + word.substring(1)));
+					
+					continue;
+					
+				}
+				//check for escaping colour codes
+				else if (word.matches("\\\\�[0-9a-fA-F]{6}")) {
+					
+					word = word.substring(1);
+					
+				}
+				
+				if (g.getFontMetrics().stringWidth(lineToAdd) + g.getFontMetrics().stringWidth(word) > width) {
+					
+					g.drawString(lineToAdd, x, y + ((currentLine + 1) * textHeight) + (currentLine * 5));
+					
+					currentLine++;
+					
+					lineToAdd = word;
+					
+				}
+				else {
+					
+					lineToAdd += " " + word;
+					
+				}
+				
+				if (i == words.length - 1) {
+					
+					g.drawString(lineToAdd, x, y + ((currentLine + 1) * textHeight) + (currentLine * 5));
+					
+				}
+				
+			}
+			
+		}
+		
+	}
+	
+	public static int predictLines(Graphics g, String[] text, int x, int y, int width, int textHeight) {
+		
+		int currentLine = -1;
+		
+		g.setFont(new Font(g.getFont().getFontName(), Font.PLAIN, textHeight)); 
+		
+		for (String line : text) {
+			
+			currentLine++;
+			
+			String lineToAdd = "";
+			
+			String[] words = line.split(" ");
+			
+			for (int i = 0; i < words.length; i++) {
+				
+				if (g.getFontMetrics().stringWidth(lineToAdd) + g.getFontMetrics().stringWidth(words[i]) > width) {
+
+					currentLine++;
+					
+					lineToAdd = words[i];
+					
+				}
+				else {
+					
+					lineToAdd += " " + words[i];
+					
+				}
+				
+			}
+			
+		}
+		
+		return currentLine + 1;
+		
+	}
+	
+}
+
+---------------------------------------------
+src\me\Josh123likeme\LORBase\UI\UIParams.java
+---------------------------------------------
+package me.Josh123likeme.LORBase.UI;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import me.Josh123likeme.LORBase.Types.Pair;
+
+public class UIParams {
+
+	@SuppressWarnings("rawtypes")
+	List<Pair> params = new ArrayList<Pair>();
+	
+	public <T> void addParameter(String parameter, T value) {
+		
+		Pair<String, T> param = new Pair<String, T>(parameter, value);
+		
+		params.add(param);
+		
+	}
+	
+	@SuppressWarnings("unchecked")
+	public <T> T getParameter(String parameter) {
+		
+		for (int i = 0; i < params.size(); i++) {
+			
+			if (params.get(i).getFirst().equals(parameter)) {
+				
+				return (T) params.get(i).getLast();
+				
+			}
+			
+		}
+		
+		throw new IllegalArgumentException("that parameter doesnt exist");
+		
+	}
+	
+}
+
+---------------------------------------------
+src\me\Josh123likeme\LORBase\Utils\AStar.java
+---------------------------------------------
+package me.Josh123likeme.LORBase.Utils;
+
+import java.util.*;
+
+import me.Josh123likeme.LORBase.BlockHolder.Wall;
+import me.Josh123likeme.LORBase.EntityHolder.Entity;
+import me.Josh123likeme.LORBase.GameHolder.World;
+import me.Josh123likeme.LORBase.Types.Vector2D;
+
+public class AStar {
+	
+	public static Vector2D[] doAStar(World world, Vector2D start, Vector2D end) {
+		
+		return doAStar(world, 
+				new Vector2DInt((int) start.X, (int) start.Y), 
+				new Vector2DInt((int) end.X, (int) end.Y));
+		
+	}
+	
+	public static Vector2D[] doAStar(World world, Entity me, Entity target) {
+		
+		Vector2D start = me.getPosition().clone();
+		//start.add(new Vector2D(me.getSize() / 2, me.getSize() / 2));
+		Vector2D end = target.getPosition().clone();
+		end.add(new Vector2D(target.getSize() / 2, target.getSize() / 2));
+		
+		return doAStar(world, 
+				new Vector2DInt((int) start.X, (int) start.Y), 
+				new Vector2DInt((int) end.X, (int) end.Y));
+		
+	}
+	
+	private static Vector2D[] doAStar(World world, Vector2DInt start, Vector2DInt end) {
+		
+		//creating the board
+		Board board = new Board(world.getWidth(), world.getHeight());
+		
+		for (int y = 0; y < board.getHeight(); y++) {
+			
+			for (int x = 0; x < board.getWidth(); x++) {
+				
+				if (world.getWall(x, y) != Wall.AIR) board.blockBlockAt(x, y);
+				
+			}
+			
+		}
+		
+		//starting algorithm
+		
+		boolean[][] cleared = new boolean[board.getHeight()][board.getWidth()];
+		boolean[][] tried = new boolean[board.getHeight()][board.getWidth()];
+		
+		double[][] gCosts = new double[board.getHeight()][board.getWidth()];
+		
+		Vector2DInt[][] parents = new Vector2DInt[board.getHeight()][board.getWidth()];
+		
+		tried[start.Y][start.X] = true;
+		
+		Vector2DInt pick = start.clone();
+		
+		do {
+			
+			//expand
+			for (int y = -1; y <= 1; y++) {
+				
+				for (int x = -1; x <= 1; x++) {
+					
+					if (x == 0 && y == 0) continue;
+					
+					Vector2DInt attempt = new Vector2DInt(pick.X + x, pick.Y + y);
+					
+					if (attempt.X < 0 || attempt.X >= board.getWidth() || attempt.Y < 0 || attempt.Y >= board.getHeight()) continue;
+						
+					if (board.getBlockAt(attempt.X, attempt.Y)) continue;
+							
+					if (tried[attempt.Y][attempt.X]) continue;
+					
+					if (parents[attempt.Y][attempt.X] == null) {
+						
+						cleared[attempt.Y][attempt.X] = true;
+						parents[attempt.Y][attempt.X] = pick.clone();
+						
+						if (x == 0 || y == 0) gCosts[attempt.Y][attempt.X] = gCosts[pick.Y][pick.X] + 1;
+						else gCosts[attempt.Y][attempt.X] = gCosts[pick.Y][pick.X] + Math.sqrt(2);
+						
+					}
+					
+					if (gCosts[pick.Y][pick.X] < gCosts[parents[attempt.Y][attempt.X].Y][parents[attempt.Y][attempt.X].X]) {
+						
+						parents[attempt.Y][attempt.X] = pick.clone();
+						
+						if (x == 0 || y == 0) gCosts[attempt.Y][attempt.X] = gCosts[pick.Y][pick.X] + 1;
+						else gCosts[attempt.Y][attempt.X] = gCosts[pick.Y][pick.X] + Math.sqrt(2);
+						
+					}	
+					
+				}
+				
+			}
+
+			//pick best
+			List<Vector2DInt> bestFCosts = new ArrayList<Vector2DInt>();
+			double bestFCost = Double.MAX_VALUE;
+			
+			for (int y = 0; y < board.getHeight(); y++) {
+				
+				for (int x = 0; x < board.getWidth(); x++) {
+
+					if (!cleared[y][x]) continue;
+					if (tried[y][x]) continue;
+					if (start.X == x && start.Y == y) continue;
+					
+					Vector2DInt current = new Vector2DInt(x, y);
+					
+					double fCost = gCosts[current.Y][current.X] + current.distanceTo(end);
+
+					if (fCost < bestFCost) {
+						
+						bestFCosts.clear();
+						
+						bestFCosts.add(current);
+						bestFCost = fCost;
+						
+					}
+					else if (fCost <= bestFCost) {
+						
+						bestFCosts.add(current);
+						
+					}
+					
+				}
+				
+			}
+			
+			List<Vector2DInt> bestHCosts = new ArrayList<Vector2DInt>();
+			double bestHCost = Double.MAX_VALUE;
+			
+			for (Vector2DInt current : bestFCosts) {
+				
+				double hCost = current.distanceTo(end);
+				
+				if (hCost < bestHCost) {
+					
+					bestHCosts.clear();
+					
+					bestHCosts.add(current);
+					bestHCost = hCost;
+					
+				}
+				else if (hCost <= bestHCost) {
+					
+					bestHCosts.add(current);
+					
+				}
+				
+			}
+			
+			if (end.X == pick.X && end.Y == pick.Y) break;
+			
+			if (bestHCosts.size() == 0) return null;
+			
+			pick = bestHCosts.get(0);
+			tried[pick.Y][pick.X] = true;
+			
+		} while (pick.X != end.X || pick.Y != end.Y);
+		
+		//backtracking path
+		List<Vector2DInt> reversePath = new ArrayList<Vector2DInt>();
+		
+		reversePath.add(end);
+		
+		Vector2DInt parent = pick;
+		
+		do {
+			
+			reversePath.add(parent);
+			
+			parent = parents[parent.Y][parent.X];
+			
+		} while (parent != null);
+		
+		//flip path to correct direction and convert to double
+		Vector2D[] flipped = new Vector2D[reversePath.size()];
+		
+		for (int i = 0; i < reversePath.size(); i++) {
+			
+			Vector2D vector = new Vector2D(reversePath.get(i).X, reversePath.get(i).Y);
+			
+			flipped[flipped.length - i - 1] = vector;
+			
+		}
+		
+		List<Vector2D> cornersAdded = new ArrayList<Vector2D>();
+	
+		cornersAdded.add(flipped[0]);
+		
+		//corner re-evaluation
+		for (int i = 1; i < flipped.length; i++) {
+			
+			Vector2D prev = flipped[i - 1];
+			Vector2D curr = flipped[i];
+			
+			if (prev.X != curr.X && prev.Y != curr.Y) {
+				
+				if (board.getBlockAt((int) prev.X, (int) curr.Y))  {
+					
+					cornersAdded.add(new Vector2D(curr.X, prev.Y));
+
+				}
+				if (board.getBlockAt((int) curr.X, (int) prev.Y))  {
+					
+					cornersAdded.add(new Vector2D(prev.X, curr.Y));
+					
+				}
+				
+			}
+			
+			cornersAdded.add(curr);
+			
+		}	
+		
+		//convert to array
+		Vector2D[] asArray = new Vector2D[cornersAdded.size()];
+		
+		for (int i = 0; i < asArray.length; i++) {
+			
+			asArray[i] = cornersAdded.get(i);
+			
+		}
+		
+		//offset points
+		for (int i = 0; i < asArray.length; i++) {
+			
+			Vector2D vector = asArray[i];
+			
+			vector.X += 0.1;
+			vector.Y += 0.1;
+			
+			asArray[i] = vector;
+			
+		}
+		
+		return asArray;
+		
+	}
+	
+}
+
+---------------------------------------------
+src\me\Josh123likeme\LORBase\Utils\Board.java
+---------------------------------------------
+package me.Josh123likeme.LORBase.Utils;
+
+public class Board {
+
+	private boolean[][] blocks;
+	
+	public Board(int width, int height) {
+		
+		blocks = new boolean[height][width];
+		
+	}
+	
+	public boolean getBlockAt(int x, int y) {
+		
+		return blocks[y][x];
+		
+	}
+	
+	public void blockBlockAt(int x, int y) {
+		
+		blocks[y][x] = true;
+		
+	}
+	
+	public int getWidth() {
+		
+		return blocks[0].length;
+		
+	}
+	
+	public int getHeight() {
+		
+		return blocks.length;
+		
+	}
+	
+}
+
+
+---------------------------------------------
+src\me\Josh123likeme\LORBase\Utils\Prims.java
+---------------------------------------------
+package me.Josh123likeme.LORBase.Utils;
+
+import me.Josh123likeme.LORBase.Types.Vector2D;
+
+public class Prims {
+
+	public static Vector2D[][] doPrims(Vector2D[] points) {
+		
+		double[][] matrix = new double[points.length][points.length];
+		
+		for (int row = 0; row < matrix.length; row++) {
+			
+			for (int column = 0; column < matrix[0].length; column++) {
+				
+				if (row != column) matrix[row][column] = points[row].distanceTo(points[column]);
+				else matrix[row][column] = Double.MAX_VALUE;
+				
+			}
+			
+		}
+		
+		Vector2D[][] pairs = new Vector2D[matrix.length - 1][2];
+		
+		boolean[] availableStarts = new boolean[matrix.length];
+		boolean[] blockedEnds = new boolean[matrix.length];
+		
+		availableStarts[0] = true;
+		blockedEnds[0] = true;
+		
+		for (int i = 0; i < matrix.length - 1; i++) {
+			
+			int smallestStart = 0;
+			int smallestEnd = 0;
+			
+			for (int start = 0; start < availableStarts.length; start++) {
+				
+				if (!availableStarts[start]) continue;
+				
+				for (int end = 0; end < blockedEnds.length; end++) {
+					
+					if (blockedEnds[end]) continue;
+					
+					if (matrix[start][end] < matrix[smallestStart][smallestEnd]) {
+						
+						smallestStart = start;
+						smallestEnd = end;
+						
+					}
+					
+				}
+				
+			}
+			
+			availableStarts[smallestEnd] = true;
+			blockedEnds[smallestEnd] = true;
+			
+			pairs[i][0] = points[smallestStart];
+			pairs[i][1] = points[smallestEnd];
+			
+		}
+		
+		return pairs;
+		
+	}
+	
+}
+
+---------------------------------------------------
+src\me\Josh123likeme\LORBase\Utils\Vector2DInt.java
+---------------------------------------------------
+package me.Josh123likeme.LORBase.Utils;
+
+import java.util.Random;
+
+public class Vector2DInt implements Cloneable {
+	
+	private static Random random = new Random();
+	
+	public int X, Y;
+	
+	public Vector2DInt() { }
+	
+	public Vector2DInt(int x, int y) {
+		
+		X = x;
+		Y = y;
+		
+	}
+	
+	public Vector2DInt normalise() {
+		
+		double mag = Math.sqrt(X*X + Y*Y);
+		
+		if (mag == 0) return this;
+		
+		X = (int) (X / mag);
+		Y = (int) (Y / mag);
+		
+		return this;
+		
+	}
+	
+	public double distanceTo(Vector2DInt vec) {
+		
+		return Math.sqrt((X - vec.X) * (X - vec.X) + (Y - vec.Y) * (Y - vec.Y));
+		
+	}
+	
+	public double directionTo(Vector2DInt vec) {
+		
+		double dx = vec.X - X;
+		double dy = vec.Y - Y;
+		
+		if (dx > 0 && dy > 0) return Math.toDegrees(Math.atan(dy / dx));
+		if (dx < 0 && dy > 0) return 90 + Math.toDegrees(Math.atan(-dx / dy));
+		if (dx < 0 && dy < 0) return 180 + Math.toDegrees(Math.atan(-dy / -dx));
+		if (dx > 0 && dy < 0) return 270 + Math.toDegrees(Math.atan(dx / -dy));
+		
+		if (dx > 0 && dy == 0) return 0;
+		if (dx == 0 && dy > 0) return 90;
+		if (dx < 0 && dy == 0) return 180;
+		if (dx == 0 && dy < 0) return 270;
+		
+		return 0d;
+		
+	}
+	
+	public Vector2DInt set(int x, int y) {
+		
+		X = x;
+		Y = y;
+		
+		return this;
+		
+	}
+	
+	public Vector2DInt add(Vector2DInt vec) {
+		
+		X += vec.X;
+		Y += vec.Y;
+		
+		return this;
+		
+	}
+	
+	public Vector2DInt subtract(Vector2DInt vec) {
+		
+		X -= vec.X;
+		Y -= vec.Y;
+		
+		return this;
+		
+	}
+	
+	public Vector2DInt scale(double scale) {
+		
+		X *= scale;
+		Y *= scale;
+		
+		return this;
+		
+	}
+	
+	public Vector2DInt fluctuate(double maxChange) {
+		
+		X += random.nextDouble() * maxChange * 2 - maxChange;
+		Y += random.nextDouble() * maxChange * 2 - maxChange;
+		
+		return this;
+		
+	}
+	
+	@Override
+	public Vector2DInt clone() {
+		
+		return new Vector2DInt(X, Y);
+		
+	}
+
+}
